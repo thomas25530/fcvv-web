@@ -33,9 +33,7 @@ class ConfigManager:
         
         # 1. Tentative de chargement via les Secrets Streamlit (pour le Cloud)
         try:
-            import streamlit as st
             if hasattr(st, "secrets") and "google_token" in st.secrets:
-                # On convertit explicitement les secrets en dictionnaire standard
                 token_info = dict(st.secrets["google_token"])
                 if token_info:
                     self.creds = Credentials.from_authorized_user_info(token_info, self.scopes)
@@ -104,8 +102,6 @@ class ConfigManager:
             return self.data
 
         except Exception as e:
-            # 🔴 AFFICHAGE DE LA VRAIE ERREUR BLOQUANTE DANS STREAMLIT
-            import streamlit as st
             st.error(f"🚨 ERREUR D'AUTHENTIFICATION GOOGLE DRIVE : {e}")
             raise e
 
@@ -265,7 +261,6 @@ class ConfigManager:
         return self.get_or_create_folder("vestiaire", parent_id=fcvv_id)
 
     def upload_uploaded_file_to_drive(self, uploaded_file, parent_folder_id):
-        """Remplace Tkinter : Reçoit directement le fichier uploadé depuis Streamlit (`st.file_uploader`)"""
         if not uploaded_file:
             return None, None
 
