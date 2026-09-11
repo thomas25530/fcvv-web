@@ -2,6 +2,7 @@ import streamlit as st
 from config_manager import ConfigManager
 
 from tabs.tab_news import render_news_tab
+from tabs.tab_notification import render_notification_tab
 
 # ID de votre fichier YAML principal sur Google Drive
 FILE_ID = "161ngxPQz66QumHjG_us6qqyAtA0GPX2x"
@@ -144,9 +145,7 @@ with tabs[8]:
 
 # 10. Onglet Notification
 with tabs[9]:
-    st.subheader("🔔 Notifications")
-    notif_data = data["appli"].get("notification", {})
-    st.write(notif_data)
+    render_notification_tab(data, manager)
 
 # --- BOUTON DE SAUVEGARDE GLOBAL (Bas de page, masqué dans l'onglet Vestiaire si besoin) ---
 st.divider()
