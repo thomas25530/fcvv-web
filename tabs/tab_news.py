@@ -8,7 +8,6 @@ def render_news_tab(data, config_manager):
     # Initialisation de la liste des news dans st.session_state si elle n'existe pas
     if "news_list" not in st.session_state:
         raw_news = data.get("appli", {}).get("news", [])
-        # Normalisation pour que chaque article possède une structure propre
         formatted_news = []
         for item in raw_news:
             images = item.get("images") or item.get("image") or []
@@ -34,11 +33,12 @@ def render_news_tab(data, config_manager):
 
     st.divider()
 
-    # Itération sur chaque article de la liste
     articles_to_delete = []
     
     for idx, article in enumerate(st.session_state.news_list):
-        with st.expander(f"Article {idx + 1} : {article['title'] || 'Sans titre'}", expanded=True):
+        # Correction ici : utilisation de "or" au lieu de "||"
+        title_display = article['title'] if article['title'] else 'Sans titre'
+        with st.expander(f"Article {idx + 1} : {title_display}", expanded=True):
             
             # 1. Titre et Date
             col1, col2 = st.columns([3, 1])
@@ -64,7 +64,6 @@ def render_news_tab(data, config_manager):
                     if st.button("❌", key=f"del_img_{idx}_{img_idx}"):
                         images_to_remove.append(img_idx)
 
-            # Suppression d'une image ciblée
             if images_to_remove:
                 for i in sorted(images_to_remove, reverse=True):
                     article["images"].pop(i)
@@ -84,7 +83,7 @@ def render_news_tab(data, config_manager):
                 key=f"news_desc_{idx}"
             )
 
-            # 4. Boutons d'action (Aperçu / Suppression de l'article)
+            # 4. Boutons d'action
             col_act1, col_act2, col_space = st.columns([1, 1, 4])
             with col_act1:
                 if st.button("🗑 Supprimer", key=f"del_news_{idx}", type="secondary"):
@@ -94,20 +93,18 @@ def render_news_tab(data, config_manager):
                 if st.button("👁 Aperçu", key=f"preview_news_{idx}"):
                     st.info(f"**Aperçu rapide :**\n\n**{article['title']}**\n*{article['date']}*\n\n{article['description']}")
 
-    # Suppression des articles marqués
     if articles_to_delete:
         for i in sorted(articles_to_delete, reverse=True):
             st.session_state.news_list.pop(i)
         st.rerun()
 
-    # Synchronisation des données modifiées vers le dictionnaire global
+    # Synchronisation vers le dictionnaire global
     validated_list = []
     for art in st.session_state.news_list:
         title = art["title"].strip()
         date_str = art["date"].strip()
         
         if title:
-            # Validation stricte de la date si l'article possède un titre
             if not re.match(r"^\d{2}/\d{2}/\d{4}$", date_str):
                 st.error(f"L'article '{title}' possède une date invalide (Format requis : JJ/MM/AAAA).")
             try:
