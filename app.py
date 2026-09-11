@@ -18,16 +18,22 @@ def get_config_manager():
 
 manager = get_config_manager()
 
-# --- CHARGEMENT DES DONNÉES ---
-with st.spinner("Chargement des configurations depuis Google Drive..."):
-    try:
-        data = manager.load_config()
-    except Exception as e:
-        st.error(f"Erreur lors du chargement : {e}")
-        data = {}
+# --- CHARGEMENT DES DONNÉES EN SESSION (Évite les appels réseau SSL redondants à chaque clic) ---
+if "config_data" not in st.session_state:
+    with st.spinner("Chargement des configurations depuis Google Drive..."):
+        try:
+            st.session_state.config_data = manager.load_config()
+            st.session_state.load_error = None
+        except Exception as e:
+            st.session_state.config_data = {"appli": {}}
+            st.session_state.load_error = str(e)
 
-# Alerte si mode hors-ligne
-if getattr(manager, "is_offline", False):
+data = st.session_state.config_data
+
+# Gestion des alertes de connexion
+if st.session_state.load_error:
+    st.warning(f"⚠️ **Attention au chargement** : {st.session_state.load_error}. Utilisation des données de secours.")
+elif getattr(manager, "is_offline", False):
     st.warning("⚠️ **Mode Hors-Ligne** : Impossible de joindre Google Drive. Utilisation du cache local.")
 else:
     st.success("🟢 Connecté à Google Drive avec succès.")
@@ -36,7 +42,7 @@ else:
 if "appli" not in data:
     data["appli"] = {}
 
-# --- EN-TÊTE & CONFIGURATION DE LA SAISON (Similaire au Header Tkinter) ---
+# --- EN-TÊTE & CONFIGURATION DE LA SAISON ---
 st.title("⚽ FC VALDAHON VERCEL - Administration")
 
 with st.expander("📅 Configuration de la Saison & Infos techniques", expanded=False):
@@ -62,7 +68,7 @@ with st.expander("📅 Configuration de la Saison & Infos techniques", expanded=
 
 st.divider()
 
-# --- SYSTÈME D'ONGLETS WEB (Remplace le ttk.Notebook) ---
+# --- SYSTÈME D'ONGLETS WEB ---
 tab_names = [
     "News",
     "Agenda & Résultats",
@@ -126,7 +132,7 @@ with tabs[7]:
     about_data = data["appli"].get("about", {})
     st.write(about_data)
 
-# 9. Onglet Vestiaire (Gestion des médias avec st.file_uploader)
+# 9. Onglet Vestiaire
 with tabs[8]:
     st.subheader("📂 Vestiaire & Médias (Google Drive)")
     vestiaire_data = data["appli"].get("vestiaire", {})
@@ -147,7 +153,7 @@ with tabs[8]:
 with tabs[9]:
     render_notification_tab(data, manager)
 
-# --- BOUTON DE SAUVEGARDE GLOBAL (Bas de page, masqué dans l'onglet Vestiaire si besoin) ---
+# --- BOUTON DE SAUVEGARDE GLOBAL ---
 st.divider()
 col_save_left, col_save_right = st.columns([6, 2])
 
