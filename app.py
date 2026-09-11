@@ -34,6 +34,7 @@ if getattr(manager, "is_offline", False):
     )
 else:
     st.success("🟢 Connecté à Google Drive avec succès.")
+    
 
 # --- INTERFACE D'ADMINISTRATION ---
 if data:
