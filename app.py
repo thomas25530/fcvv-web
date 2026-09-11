@@ -62,7 +62,7 @@ if data:
         try:
             parsed_data = yaml.safe_load(new_yaml_str)
         except Exception as parse_err:
-            st.error(freur de syntaxe YAML : {parse_err}")
+            st.error(f"erreur de syntaxe YAML : {parse_err}")
             parsed_data = None
 
     # --- BOUTON DE SAUVEGARDE ---
