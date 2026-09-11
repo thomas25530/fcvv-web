@@ -22,9 +22,15 @@ manager = get_config_manager()
 # --- CHARGEMENT DES DONNÉES ---
 with st.spinner("Chargement des configurations depuis Google Drive..."):
     try:
+        manager.authenticate()  # On teste l'authentification seule d'abord
         data = manager.load_config()
     except Exception as e:
-        st.error(f"Erreur lors du chargement : {e}")
+        st.error(
+            f"❌ **Échec de connexion Google Drive** : type({type(e).__name__}) -> {e}"
+        )
+        import traceback
+
+        st.code(traceback.format_exc())
         data = {}
 
 # Alerte si mode hors-ligne
