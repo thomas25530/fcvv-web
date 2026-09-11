@@ -35,12 +35,14 @@ class ConfigManager:
         try:
             import streamlit as st
             if hasattr(st, "secrets") and "google_token" in st.secrets:
+                # On convertit explicitement les secrets en dictionnaire standard
                 token_info = dict(st.secrets["google_token"])
-                self.creds = Credentials.from_authorized_user_info(token_info, self.scopes)
+                if token_info:
+                    self.creds = Credentials.from_authorized_user_info(token_info, self.scopes)
         except Exception as e:
-            print(f"Secrets Streamlit non utilisés ou indisponibles : {e}")
+            print(f"Erreur lors de la lecture des Secrets Streamlit : {e}")
 
-        # 2. Sinon, tentative via le fichier token.json local
+        # 2. Sinon, tentative via le fichier token.json local (si on est en local)
         if not self.creds or not self.creds.valid:
             token_dir = self.base_dir / "credentials"
             token_dir.mkdir(parents=True, exist_ok=True)
