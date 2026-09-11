@@ -102,11 +102,10 @@ class ConfigManager:
             return self.data
 
         except Exception as e:
-            print(
-                f"Mode en ligne indisponible ({e}). Tentative de chargement du cache..."
-            )
-            self.is_offline = True
-            return self._load_local_cache()
+            # 🔴 AFFICHAGE DE LA VRAIE ERREUR BLOQUANTE DANS STREAMLIT
+            import streamlit as st
+            st.error(f"🚨 ERREUR D'AUTHENTIFICATION GOOGLE DRIVE : {e}")
+            raise e
 
     def _load_local_cache(self):
         if self.cache_path.exists():
