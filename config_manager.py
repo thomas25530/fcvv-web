@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 from datetime import datetime
 import yaml
+import streamlit as st
 
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -28,34 +29,43 @@ class ConfigManager:
         self.cache_path = self.base_dir / "config_cache.yaml"
 
     def authenticate(self):
-        """Authentification Google Drive adaptée pour le web/cloud"""
-        token_dir = self.base_dir / "credentials"
-        token_dir.mkdir(parents=True, exist_ok=True)
-        token_path = token_dir / "token.json"
+        """Authentification Google Drive adaptée pour le web/cloud et le local"""
+        
+        # 1. Tentative de chargement via les Secrets Streamlit (pour le Cloud)
+        try:
+            import streamlit as st
+            if hasattr(st, "secrets") and "google_token" in st.secrets:
+                token_info = dict(st.secrets["google_token"])
+                self.creds = Credentials.from_authorized_user_info(token_info, self.scopes)
+        except Exception as e:
+            print(f"Secrets Streamlit non utilisés ou indisponibles : {e}")
 
-        # Sur Streamlit Cloud, le token ou les credentials doivent souvent passer par les "Secrets"
-        # Si vous avez un fichier token.json stocké localement ou via les variables d'environnement :
-        if token_path.exists():
-            self.creds = Credentials.from_authorized_user_file(
-                str(token_path), self.scopes
-            )
-
+        # 2. Sinon, tentative via le fichier token.json local
         if not self.creds or not self.creds.valid:
-            if self.creds and self.creds.expired and self.creds.refresh_token:
-                try:
-                    self.creds.refresh(Request())
-                except Exception as e:
-                    print(
-                        f"Impossible de rafraîchir le jeton : {e}. Re-connexion nécessaire."
-                    )
-                    self.creds = None
+            token_dir = self.base_dir / "credentials"
+            token_dir.mkdir(parents=True, exist_ok=True)
+            token_path = token_dir / "token.json"
 
-            if not self.creds:
-                # Sur un serveur cloud, le flux local (InstalledAppFlow) ne s'ouvre pas dans un navigateur local.
-                # Il faudra idéalement stocker le token.json dans les Streamlit Secrets.
-                raise Exception(
-                    "Jeton Google Drive invalide ou absent. Veuillez configurer les credentials dans les Secrets Streamlit."
-                )
+            if token_path.exists():
+                try:
+                    self.creds = Credentials.from_authorized_user_file(str(token_path), self.scopes)
+                except Exception as e:
+                    print(f"Erreur de lecture du token local : {e}")
+
+        # 3. Rafraîchissement si le jeton est expiré mais possède un refresh_token
+        if self.creds and self.creds.expired and self.creds.refresh_token:
+            try:
+                self.creds.refresh(Request())
+            except Exception as e:
+                print(f"Impossible de rafraîchir le jeton : {e}")
+                self.creds = None
+
+        # 4. Si aucune accréditation valide n'a pu être trouvée
+        if not self.creds or not self.creds.valid:
+            raise Exception(
+                "Jeton Google Drive invalide ou absent. Veuillez configurer correctement "
+                "les `google_token` dans les Secrets Streamlit ou fournir un token.json valide."
+            )
 
         self.service = build(
             "drive", "v3", credentials=self.creds, static_discovery=True
