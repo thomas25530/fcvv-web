@@ -28,6 +28,26 @@ class ConfigManager:
         self.base_dir = Path(".") / "fcvv_cache_data"
         self.cache_path = self.base_dir / "config_cache.yaml"
 
+    
+    def authenticate_with_token_info(self, token_info):
+        """Force l'authentification avec un dictionnaire de token fourni directement (ex: via l'UI) et le sauvegarde"""
+        try:
+            self.creds = Credentials.from_authorized_user_info(token_info, self.scopes)
+            
+            # Sauvegarde locale dans le fichier token.json du cache pour les prochains redémarrages
+            token_dir = self.base_dir / "credentials"
+            token_dir.mkdir(parents=True, exist_ok=True)
+            token_path = token_dir / "token.json"
+            
+            with open(token_path, "w", encoding="utf-8") as f:
+                f.write(self.creds.to_json())
+                
+            self.service = build("drive", "v3", credentials=self.creds, static_discovery=True)
+            self.is_offline = False
+            return True
+        except Exception as e:
+            raise Exception(f"Format de token invalide : {e}")
+    
     def authenticate(self):
         """Authentification Google Drive adaptée pour le web/cloud et le local avec rafraîchissement automatique"""
         

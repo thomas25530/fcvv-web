@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+import json
 import streamlit as st
 from config_manager import ConfigManager
 
@@ -65,6 +67,27 @@ with st.expander("📅 Configuration de la Saison & Infos techniques", expanded=
             * **Contact** : tournoivercel@gmail.com
             """
         )
+
+    st.divider()
+    
+    # --- ZONE D'IMPORT DU TOKEN GOOGLE DRIVE (En cas d'expiration) ---
+    st.markdown("🔑 **Maintenance Google Drive (Jeton d'authentification)**")
+    st.write("Si le jeton a expiré ou pose problème, déposez votre nouveau fichier `token.json` ci-dessous :")
+    
+    uploaded_token = st.file_uploader("Importer un nouveau token.json", type=["json"], key="token_uploader")
+    if uploaded_token is not None:
+        if st.button("Appliquer et synchroniser le nouveau token"):
+            try:
+                token_data = json.load(uploaded_token)
+                manager.authenticate_with_token_info(token_data)
+                
+                # Rechargement de la config avec le nouveau token validé
+                st.session_state.config_data = manager.load_config()
+                st.session_state.load_error = None
+                st.success("Jeton mis à jour et enregistré avec succès ! Reconnexion établie.")
+                st.rerun()
+            except Exception as token_err:
+                st.error(f"Erreur lors de l'application du token : {token_err}")
 
 st.divider()
 
