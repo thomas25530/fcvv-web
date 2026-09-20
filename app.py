@@ -5,6 +5,7 @@ from config_manager import ConfigManager
 
 from tabs.tab_news import render_news_tab
 from tabs.tab_notification import render_notification_tab
+from tabs.tab_about import render_about_tab
 
 # ID de votre fichier YAML principal sur Google Drive
 FILE_ID = "161ngxPQz66QumHjG_us6qqyAtA0GPX2x"
@@ -150,10 +151,9 @@ with tabs[6]:
     st.write(partenaires_data)
 
 # 8. Onglet About
+# 8. Onglet About
 with tabs[7]:
-    st.subheader("ℹ️ À propos")
-    about_data = data["appli"].get("about", {})
-    st.write(about_data)
+    render_about_tab(data, manager)
 
 # 9. Onglet Vestiaire
 with tabs[8]:
