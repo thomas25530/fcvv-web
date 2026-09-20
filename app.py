@@ -7,6 +7,7 @@ from tabs.tab_news import render_news_tab
 from tabs.tab_notification import render_notification_tab
 from tabs.tab_about import render_about_tab
 from tabs.tab_partenaires import render_partenaires_tab  # <--- 1. IMPORT DE L'ONGLET PARTENAIRES
+from tabs.tab_boutique import render_boutique_tab
 
 # ID de votre fichier YAML principal sur Google Drive
 FILE_ID = "161ngxPQz66QumHjG_us6qqyAtA0GPX2x"
@@ -140,10 +141,9 @@ with tabs[4]:
     st.write(divers_data)
 
 # 6. Onglet Boutique
+# 6. Onglet Boutique
 with tabs[5]:
-    st.subheader("👕 Boutique")
-    boutique_data = data["appli"].get("boutique", {})
-    st.write(boutique_data)
+    render_boutique_tab(data, manager)
 
 # 7. Onglet Partenaires
 with tabs[6]:

@@ -1,5 +1,6 @@
 eclipse.preferences.version=1
 encoding//tabs/tab_about.py=utf-8
+encoding//tabs/tab_boutique.py=utf-8
 encoding//tabs/tab_partenaires.py=utf-8
 encoding/app.py=utf-8
 encoding/config_manager.py=utf-8
