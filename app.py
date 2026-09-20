@@ -188,27 +188,37 @@ with col_save_right:
             st.error(f"Erreur lors de la sauvegarde : {err}")
             
 
-# --- STYLE CSS GLOBAL POUR AMÉLIORER LE CONRASTE DES CHAMPS ---
+# --- STYLE CSS GLOBAL POUR AMÉLIORER LA VISIBILITÉ DES CHAMPS ÉDITABLES ---
 st.markdown("""
 <style>
-    /* Donne une couleur de fond subtile et une bordure nette aux champs de saisie */
+    /* 1. CHAMPS ÉDITABLES (Inputs & TextAreas) : Effet "Boîte de saisie" bien visible */
     .stTextInput input, .stTextArea textarea {
-        background-color: #f8fafc !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 6px !important;
-        color: #1e293b !important;
+        background-color: #ffffff !important;
+        border: 2px solid #94a3b8 !important; /* Bordure plus sombre et épaisse pour la clarté */
+        border-radius: 8px !important;
+        color: #0f172a !important;
+        font-weight: 500 !important;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important; /* Légère ombre pour effet relief */
     }
     
-    /* Effet au survol ou au focus (quand on clique dedans) */
-    .stTextInput input:focus, .stTextArea textarea:focus {
-        background-color: #ffffff !important;
-        border-color: #3b82f6 !important;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+    /* 2. EFFET AU SURVOL (Hover) : Indique que la zone est interactive */
+    .stTextInput input:hover, .stTextArea textarea:hover {
+        border-color: #64748b !important;
     }
 
-    /* Améliore l'apparence des conteneurs / cartes avec bordure */
+    /* 3. EFFET AU CLIC (Focus) : Devient bleu vif pour montrer qu'on écrit dedans */
+    .stTextInput input:focus, .stTextArea textarea:focus {
+        background-color: #ffffff !important;
+        border-color: #2563eb !important; /* Bleu intense */
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25) !important;
+    }
+
+    /* 4. CONTENEURS / CARTES : Fond subtil pour structurer les sections */
     div[data-testid="stVerticalBlock"] div[data-testid="stContainer"] {
-        border-radius: 8px;
+        border-radius: 10px;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
     }
 </style>
 """, unsafe_allow_html=True)
