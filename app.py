@@ -186,3 +186,29 @@ with col_save_right:
             st.success("Modifications enregistrées et synchronisées avec succès !")
         except Exception as err:
             st.error(f"Erreur lors de la sauvegarde : {err}")
+            
+
+# --- STYLE CSS GLOBAL POUR AMÉLIORER LE CONRASTE DES CHAMPS ---
+st.markdown("""
+<style>
+    /* Donne une couleur de fond subtile et une bordure nette aux champs de saisie */
+    .stTextInput input, .stTextArea textarea {
+        background-color: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        color: #1e293b !important;
+    }
+    
+    /* Effet au survol ou au focus (quand on clique dedans) */
+    .stTextInput input:focus, .stTextArea textarea:focus {
+        background-color: #ffffff !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+    }
+
+    /* Améliore l'apparence des conteneurs / cartes avec bordure */
+    div[data-testid="stVerticalBlock"] div[data-testid="stContainer"] {
+        border-radius: 8px;
+    }
+</style>
+""", unsafe_allow_html=True)
