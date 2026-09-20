@@ -3,47 +3,64 @@ import streamlit as st
 
 def render_about_tab(data, config_manager):
     """
-    Rendu de l'onglet 'About / À propos' pour Streamlit, 
-    aligné avec le fonctionnement global de l'application (sauvegarde globale).
+    Rendu de l'onglet 'About / À propos' pour Streamlit.
     """
-    # 1. Vérification et sécurisation de la structure des données
-    if "appli" not in data:
-        data["appli"] = {}
-    if "about" not in data["appli"]:
-        data["appli"]["about"] = {}
-        
-    about_data = data["appli"]["about"]
-    sponsor_folder_id = config_manager.get_sponsor_folder_id()
-
     st.subheader("ℹ️ Configuration de la section 'À propos' (About)")
+
+    # Initialisation de l'état dans le session_state pour éviter les pertes de focus et les appels directs
+    if "about_data_state" not in st.session_state:
+        raw_about = data.get("appli", {}).get("about", {})
+        
+        # Formatage initial des détails techniques
+        existing_details = raw_about.get('details', [])
+        formatted_details = [
+            {
+                'label': d.get('label', ''), 
+                'label_en': d.get('label_en', ''), 
+                'value': d.get('value', '')
+            }
+            for d in existing_details
+        ]
+
+        st.session_state.about_data_state = {
+            "version_android": str(raw_about.get('version_android', '')),
+            "version_ios": str(raw_about.get('version_ios', '')),
+            "intro_text": str(raw_about.get('intro_text', '')),
+            "intro_text_en": str(raw_about.get('intro_text_en', '')),
+            "logo_partenaire": str(raw_about.get('logo_partenaire', '')),
+            "sponsor_url": str(raw_about.get('sponsor_url', '')),
+            "details": formatted_details
+        }
+
+    about_state = st.session_state.about_data_state
 
     # --- SECTION VERSIONS DE LA CIBLE ---
     with st.expander("📱 Versions Cibles", expanded=True):
         col1, col2 = st.columns(2)
         with col1:
-            v_android = st.text_input(
+            about_state["version_android"] = st.text_input(
                 "Version Android", 
-                value=str(about_data.get('version_android', '')),
+                value=about_state["version_android"],
                 key="input_version_android"
             )
         with col2:
-            v_ios = st.text_input(
+            about_state["version_ios"] = st.text_input(
                 "Version iOS", 
-                value=str(about_data.get('version_ios', '')),
+                value=about_state["version_ios"],
                 key="input_version_ios"
             )
 
     # --- SECTION TEXTES D'INTRODUCTION ---
     with st.expander("📝 Textes d'Introduction", expanded=True):
-        txt_intro_fr = st.text_area(
+        about_state["intro_text"] = st.text_area(
             "Français", 
-            value=str(about_data.get('intro_text', '')),
+            value=about_state["intro_text"],
             height=100,
             key="input_intro_fr"
         )
-        txt_intro_en = st.text_area(
+        about_state["intro_text_en"] = st.text_area(
             "English", 
-            value=str(about_data.get('intro_text_en', '')),
+            value=about_state["intro_text_en"],
             height=100,
             key="input_intro_en"
         )
@@ -52,13 +69,13 @@ def render_about_tab(data, config_manager):
     with st.expander("🤝 Partenariat & Logo", expanded=True):
         col_url, col_btn = st.columns([4, 1])
         with col_url:
-            v_logo = st.text_input(
+            about_state["logo_partenaire"] = st.text_input(
                 "URL Image Logo (Google Drive)", 
-                value=str(about_data.get('logo_partenaire', '')),
+                value=about_state["logo_partenaire"],
                 key="input_logo_partenaire"
             )
         with col_btn:
-            st.markdown("<br>", unsafe_allow_html=True)  # Ajustement visuel de l'alignement
+            st.markdown("<br>", unsafe_allow_html=True)  
             uploaded_logo = st.file_uploader(
                 "📁", 
                 type=["png", "jpg", "jpeg", "webp"], 
@@ -67,20 +84,22 @@ def render_about_tab(data, config_manager):
             )
             if uploaded_logo is not None:
                 try:
-                    with st.spinner("Téléchargement sur Drive..."):
+                    with st.spinner("Upload vers Google Drive en cours..."):
+                        # Sécurisation de l'appel réseau Drive avec gestion d'erreur locale
+                        sponsor_folder_id = config_manager.get_sponsor_folder_id()
                         file_id, file_url = config_manager.upload_uploaded_file_to_drive(
                             uploaded_logo, sponsor_folder_id
                         )
                         if file_url:
-                            about_data['logo_partenaire'] = file_url
-                            st.success("Logo uploadé avec succès ! Pensez à sauvegarder.")
+                            about_state["logo_partenaire"] = file_url
+                            st.success("Logo uploadé avec succès !")
                             st.rerun()
                 except Exception as e:
-                    st.error(f"Erreur lors de l'upload : {e}")
+                    st.error(f"Erreur lors de l'upload sur Google Drive : {e}")
 
-        v_sponsor_url = st.text_input(
+        about_state["sponsor_url"] = st.text_input(
             "Lien de redirection (Site du Sponsor)", 
-            value=str(about_data.get('sponsor_url', '')),
+            value=about_state["sponsor_url"],
             key="input_sponsor_url"
         )
 
@@ -88,21 +107,8 @@ def render_about_tab(data, config_manager):
     with st.expander("📊 Détails Techniques (Bas de page)", expanded=True):
         st.markdown("Gérez les lignes d'information affichées en bas de page de l'application.")
 
-        # Initialisation de la liste des détails dans le session_state si absente
-        if "about_details_list" not in st.session_state:
-            existing_details = about_data.get('details', [])
-            st.session_state.about_details_list = [
-                {
-                    'label': d.get('label', ''), 
-                    'label_en': d.get('label_en', ''), 
-                    'value': d.get('value', '')
-                }
-                for d in existing_details
-            ]
-
-        # Affichage et édition dynamique des lignes
         details_to_remove = []
-        for index, detail in enumerate(st.session_state.about_details_list):
+        for index, detail in enumerate(about_state["details"]):
             cols = st.columns([3, 3, 4, 1])
             with cols[0]:
                 detail['label'] = st.text_input(
@@ -133,27 +139,30 @@ def render_about_tab(data, config_manager):
         # Gestion des suppressions de lignes
         if details_to_remove:
             for i in sorted(details_to_remove, reverse=True):
-                st.session_state.about_details_list.pop(i)
+                about_state["details"].pop(i)
             st.rerun()
 
         if st.button("➕ Ajouter une information", key="btn_add_detail"):
-            st.session_state.about_details_list.append({'label': '', 'label_en': '', 'value': ''})
+            about_state["details"].append({'label': '', 'label_en': '', 'value': ''})
             st.rerun()
 
-    # --- SYNCHRONISATION EN TEMPS RÉEL AVEC LE DICTIONNAIRE GLOBAL ---
-    about_data['version_android'] = v_android.strip()
-    about_data['version_ios'] = v_ios.strip()
-    about_data['intro_text'] = txt_intro_fr.strip()
-    about_data['intro_text_en'] = txt_intro_en.strip()
-    about_data['logo_partenaire'] = v_logo.strip()
-    about_data['sponsor_url'] = v_sponsor_url.strip()
-    
-    # On filtre pour ignorer les lignes dont le libellé français est vide
-    about_data['details'] = [
-        {
-            'label': d['label'].strip(),
-            'label_en': d['label_en'].strip(),
-            'value': d['value'].strip()
-        }
-        for d in st.session_state.about_details_list if d.get('label', '').strip()
-    ]
+    # --- SYNCHRONISATION FINALE AVEC LE DICTIONNAIRE GLOBAL `data` ---
+    if "appli" not in data:
+        data["appli"] = {}
+        
+    data["appli"]["about"] = {
+        "version_android": about_state["version_android"].strip(),
+        "version_ios": about_state["version_ios"].strip(),
+        "intro_text": about_state["intro_text"].strip(),
+        "intro_text_en": about_state["intro_text_en"].strip(),
+        "logo_partenaire": about_state["logo_partenaire"].strip(),
+        "sponsor_url": about_state["sponsor_url"].strip(),
+        "details": [
+            {
+                'label': d['label'].strip(),
+                'label_en': d['label_en'].strip(),
+                'value': d['value'].strip()
+            }
+            for d in about_state["details"] if d.get('label', '').strip()
+        ]
+    }
