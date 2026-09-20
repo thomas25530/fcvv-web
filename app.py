@@ -6,6 +6,7 @@ from config_manager import ConfigManager
 from tabs.tab_news import render_news_tab
 from tabs.tab_notification import render_notification_tab
 from tabs.tab_about import render_about_tab
+from tabs.tab_partenaires import render_partenaires_tab  # <--- 1. IMPORT DE L'ONGLET PARTENAIRES
 
 # ID de votre fichier YAML principal sur Google Drive
 FILE_ID = "161ngxPQz66QumHjG_us6qqyAtA0GPX2x"
@@ -146,11 +147,8 @@ with tabs[5]:
 
 # 7. Onglet Partenaires
 with tabs[6]:
-    st.subheader("🤝 Partenaires")
-    partenaires_data = data["appli"].get("partenaires", {})
-    st.write(partenaires_data)
+    render_partenaires_tab(data, manager)  # <--- 2. APPEL DE LA NOUVELLE FONCTION PARTENAIRES
 
-# 8. Onglet About
 # 8. Onglet About
 with tabs[7]:
     render_about_tab(data, manager)
@@ -176,7 +174,7 @@ with tabs[8]:
 with tabs[9]:
     render_notification_tab(data, manager)
 
-# --- BOUTON DE SAUVEGARDE GLOBAL ---
+# --- BOUTON DE SAUVEGARDE GLOBALE ---
 st.divider()
 col_save_left, col_save_right = st.columns([6, 2])
 
