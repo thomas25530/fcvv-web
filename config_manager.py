@@ -29,8 +29,20 @@ class ConfigManager:
         self.cache_path = self.base_dir / "config_cache.yaml"
 
     def authenticate(self):
-        """Authentification Google Drive adaptée pour le web/cloud et le local"""
+        """Authentification Google Drive adaptée pour le web/cloud et le local avec rafraîchissement automatique"""
         
+        # Récupération optionnelle des identifiants OAuth globaux s'ils sont stockés dans les secrets
+        client_id = None
+        client_secret = None
+        try:
+            if hasattr(st, "secrets"):
+                if "google_client_id" in st.secrets:
+                    client_id = st.secrets["google_client_id"]
+                if "google_client_secret" in st.secrets:
+                    client_secret = st.secrets["google_client_secret"]
+        except Exception:
+            pass
+
         # 1. Tentative de chargement via les Secrets Streamlit (pour le Cloud)
         try:
             if hasattr(st, "secrets") and "google_token" in st.secrets:
@@ -41,7 +53,7 @@ class ConfigManager:
             print(f"Erreur lors de la lecture des Secrets Streamlit : {e}")
 
         # 2. Sinon, tentative via le fichier token.json local (si on est en local)
-        if not self.creds or not self.creds.valid:
+        if not self.creds:
             token_dir = self.base_dir / "credentials"
             token_dir.mkdir(parents=True, exist_ok=True)
             token_path = token_dir / "token.json"
@@ -52,19 +64,27 @@ class ConfigManager:
                 except Exception as e:
                     print(f"Erreur de lecture du token local : {e}")
 
-        # 3. Rafraîchissement si le jeton est expiré mais possède un refresh_token
+        # S'assurer que les client_id / client_secret sont rattachés aux crédits si disponibles et manquants
+        if self.creds and not self.creds.client_id and client_id:
+            self.creds.client_id = client_id
+        if self.creds and not self.creds.client_secret and client_secret:
+            self.creds.client_secret = client_secret
+
+        # 3. Rafraîchissement automatique si le jeton est expiré et qu'un refresh_token est présent
         if self.creds and self.creds.expired and self.creds.refresh_token:
             try:
+                print("Jeton expiré détecté, rafraîchissement automatique en cours...")
                 self.creds.refresh(Request())
+                print("Jeton rafraîchis avec succès !")
             except Exception as e:
-                print(f"Impossible de rafraîchir le jeton : {e}")
+                print(f"Impossible de rafraîchir le jeton automatiquement : {e}")
                 self.creds = None
 
-        # 4. Si aucune accréditation valide n'a pu être trouvée
+        # 4. Si aucune accréditation valide n'a pu être trouvée ou rafraîchie
         if not self.creds or not self.creds.valid:
             raise Exception(
-                "Jeton Google Drive invalide ou absent. Veuillez configurer correctement "
-                "les `google_token` dans les Secrets Streamlit ou fournir un token.json valide."
+                "Jeton Google Drive invalide, expiré ou absent. Le rafraîchissement a échoué. "
+                "Veuillez régénérer un token valide ou configurer correctement vos secrets."
             )
 
         self.service = build(
