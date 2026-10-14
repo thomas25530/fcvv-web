@@ -97,12 +97,7 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-   /* 1. Masquer totalement le texte et les instructions de la zone de dépôt (y compris la limite de taille) */
-    [data-testid="stFileUploaderInstructions"] {
-        display: none !important;
-    }
-
-    /* 2. Réduire la taille du composant upload pour qu'il n'occupe que l'espace du bouton */
+    /* 6. COMPACTAGE ET NETTOYAGE DU FILE UPLOADER */
     div[data-testid="stFileUploader"] {
         width: fit-content !important;
         display: inline-block !important;
@@ -116,7 +111,7 @@ st.markdown("""
         height: auto !important;
     }
 
-    /* 3. Style compact du bouton d'upload */
+    /* Style du bouton d'upload */
     div[data-testid="stFileUploader"] section button {
         background-color: #1e293b !important;
         color: #f1f5f9 !important;
@@ -130,9 +125,12 @@ st.markdown("""
         border-color: #3b82f6 !important;
         background-color: #334155 !important;
     }
-    /* Masquer le texte explicatif et la limite de taille (200MB) */
-    div[data-testid="stFileUploader"] section small,
-    div[data-testid="stFileUploader"] section [data-testid="stMarkdownContainer"] {
+
+    /* CIBLAGE MIS À JOUR : Masquer définitivement la ligne "200MB per file..." et les instructions */
+    [data-testid="stFileUploaderInstructions"],
+    div[data-testid="stFileUploader"] small,
+    div[data-testid="stFileUploader"] span,
+    div[data-testid="stFileUploader"] div[data-baseweb="file-uploader"] + div {
         display: none !important;
     }
 </style>
