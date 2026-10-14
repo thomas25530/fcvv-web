@@ -212,8 +212,15 @@ def verify_login(selection, pwd):
 if st.session_state.auth_profile is None:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.markdown("<br><br>", unsafe_allow_html=True)
-        st.title("⚽ FC VALDAHON VERCEL")
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Affichage du logo centré sur l'écran de connexion
+        try:
+            st.image("assets/logo.png", width=100)
+        except Exception:
+            st.write("⚽")
+
+        st.title("FC VALDAHON VERCEL")
         st.subheader("Connexion FCVV Admin")
         
         vestiaires = data.get("appli", {}).get("vestiaire", [])
