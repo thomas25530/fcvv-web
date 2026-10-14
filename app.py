@@ -379,22 +379,12 @@ else:
     tab_names = ["Vestiaire", "Notification"]
     tabs = st.tabs(tab_names)
 
+    file_id = profile["vestiaire_data"]["file_id"]
+
+    st.session_state.vestiaire_current_file_id = file_id
+    st.session_state.vestiaire_data = manager.load_yaml_from_drive(file_id)
     with tabs[0]:
-        st.subheader(f"📂 Gestion Vestiaire - {profile.get('vestiaire_data', {}).get('categorie', '')}")
-        vestiaire_info = profile.get('vestiaire_data', {})
-        st.write("Informations de votre catégorie :", vestiaire_info)
-        
-        uploaded_file = st.file_uploader("Choisir une image à envoyer dans votre vestiaire", type=["jpg", "jpeg", "png", "webp"])
-        if uploaded_file is not None:
-            if st.button("Uploader ce fichier sur le Drive"):
-                try:
-                    with st.spinner("Téléversement vers Google Drive..."):
-                        vestiaire_folder_id = manager.get_vestiaire_folder_id()
-                        file_id, file_url = manager.upload_uploaded_file_to_drive(uploaded_file, vestiaire_folder_id)
-                    st.success(f"Fichier uploadé avec succès ! ID : {file_id}")
-                    st.write(f"Lien public : {file_url}")
-                except Exception as up_err:
-                    st.error(f"Erreur lors de l'upload : {up_err}")
+        render_vestiaire_tab(data, manager)
 
     with tabs[1]:
         render_notification_tab(data, manager)
