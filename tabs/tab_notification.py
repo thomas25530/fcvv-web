@@ -1,9 +1,16 @@
+# -*- coding: utf-8 -*-
 import streamlit as st
 import hashlib
 import requests
 
-def render_notification_tab(data, config_manager):
+def render_notification_tab(data, config_manager, auth_profile=None):
     st.subheader("🔔 Gestion des Notifications Push")
+
+    # Si le profil n'est pas passé en argument, on essaie de le récupérer depuis st.session_state
+    if not auth_profile:
+        auth_profile = st.session_state.get("auth_profile", {"type": "super_admin", "allowed_tabs": "all"})
+
+    is_super = (auth_profile.get("type") == "super_admin")
 
     # --- FONCTION INTERNE POUR L'API ---
     def _get_admin_api_key():
@@ -39,62 +46,53 @@ def render_notification_tab(data, config_manager):
             return False, f"Impossible de contacter l'API :\n{e}"
 
     # ==========================================
-    # PARTIE 1 : Notification Globale (TournoiVercel)
+    # CAS 1 : SUPER ADMIN (Voit tout)
     # ==========================================
-    with st.container(border=True):
-        st.markdown("### 📢 1. Notification Générale (Canal : TournoiVercel)")
-        st.caption("Cette notification sera transmise à TOUTES les applications connectées.")
+    if is_super:
+        # --- PARTIE 1 : Notification Globale (TournoiVercel) ---
+        with st.container(border=True):
+            st.markdown("### 📢 1. Notification Générale (Canal : TournoiVercel)")
+            st.caption("Cette notification sera transmise à TOUTES les applications connectées.")
 
-        gen_title = st.text_input("Titre de la notification (Générale)", key="gen_notif_title")
-        gen_msg = st.text_area("Message (corps)", height=100, key="gen_notif_msg")
+            gen_title = st.text_input("Titre de la notification (Générale)", key="gen_notif_title")
+            gen_msg = st.text_area("Message (corps)", height=100, key="gen_notif_msg")
 
-        if st.button("🚀 ENVOYER À TOUTES LES APPLIS", type="primary", key="btn_send_gen"):
-            if not gen_title.strip() or not gen_msg.strip():
-                st.warning("Veuillez remplir le titre et le corps du message.")
+            if st.button("🚀 ENVOYER À TOUTES LES APPLIS", type="primary", key="btn_send_gen"):
+                if not gen_title.strip() or not gen_msg.strip():
+                    st.warning("Veuillez remplir le titre et le corps du message.")
+                else:
+                    with st.spinner("Envoi de la notification globale en cours..."):
+                        succes, message = _post_api_notification("TournoiVercel", gen_title.strip(), gen_msg.strip())
+                    if succes:
+                        st.success(message)
+                    else:
+                        st.error(message)
+
+        st.divider()
+
+        # --- PARTIE 2 : Notification par Catégorie Spécifique (Sans mdp pour le Super Admin) ---
+        with st.container(border=True):
+            st.markdown("### 🎯 2. Notification par Catégorie Spécifique")
+
+            vestiaires = data.get("appli", {}).get("vestiaire", [])
+            categories_dispo = [
+                item.get("categorie")
+                for item in vestiaires
+                if isinstance(item, dict) and item.get("categorie")
+            ]
+
+            if not categories_dispo:
+                st.warning("⚠️ Aucune catégorie trouvée dans le vestiaire.")
             else:
-                with st.spinner("Envoi de la notification globale en cours..."):
-                    succes, message = _post_api_notification("TournoiVercel", gen_title.strip(), gen_msg.strip())
-                if succes:
-                    st.success(message)
-                else:
-                    st.error(message)
+                cat_choisie = st.selectbox("Sélectionner la catégorie destinataire :", categories_dispo, key="notif_cat_select_super")
+                cat_title = st.text_input("Titre de la notification :", key="notif_cat_title_super")
+                cat_msg = st.text_area("Message (corps) :", height=100, key="notif_cat_msg_super")
 
-    st.divider()
-
-    # ==========================================
-    # PARTIE 2 : Notification par Catégorie Spécifique
-    # ==========================================
-    with st.container(border=True):
-        st.markdown("### 🎯 2. Notification par Catégorie Spécifique")
-
-        # Récupération dynamique des catégories depuis les vestiaires
-        vestiaires = data.get("appli", {}).get("vestiaire", [])
-        cat_map = {
-            item.get("categorie"): item.get("password_admin_hash")
-            for item in vestiaires
-            if item.get("categorie")
-        }
-
-        categories_dispo = list(cat_map.keys())
-
-        if not categories_dispo:
-            st.warning("⚠️ Aucune catégorie trouvée dans le vestiaire.")
-        else:
-            cat_choisie = st.selectbox("Sélectionner la catégorie destinataire :", categories_dispo, key="notif_cat_select")
-            cat_pwd = st.text_input("Mot de passe Administrateur de la catégorie :", type="password", key="notif_cat_pwd")
-            cat_title = st.text_input("Titre de la notification :", key="notif_cat_title")
-            cat_msg = st.text_area("Message (corps) :", height=100, key="notif_cat_msg")
-
-            if st.button("🔒 VÉRIFIER & ENVOYER À LA CATÉGORIE", type="secondary", key="btn_send_cat"):
-                if not cat_pwd or not cat_title.strip() or not cat_msg.strip():
-                    st.warning("Veuillez remplir le mot de passe, le titre et le corps du message.")
-                else:
-                    # Vérification du hash du mot de passe
-                    stored_hash = cat_map.get(cat_choisie)
-                    pwd_hash_saisi = hashlib.sha256(cat_pwd.encode("utf-8")).hexdigest()
-
-                    if pwd_hash_saisi != stored_hash:
-                        st.error("Mot de passe administrateur incorrect pour cette catégorie.")
+                if st.button("🚀 ENVOYER À LA CATÉGORIE", type="primary", key="btn_send_cat_super"):
+                    if not cat_choisie:
+                        st.warning("Aucune catégorie sélectionnée.")
+                    elif not cat_title.strip() or not cat_msg.strip():
+                        st.warning("Veuillez remplir le titre et le corps du message.")
                     else:
                         with st.spinner(f"Envoi vers la catégorie [{cat_choisie}]..."):
                             succes, message = _post_api_notification(cat_choisie, cat_title.strip(), cat_msg.strip())
@@ -102,3 +100,28 @@ def render_notification_tab(data, config_manager):
                             st.success(message)
                         else:
                             st.error(message)
+
+    # ==========================================
+    # CAS 2 : PROFIL RESTREINT (Catégorie spécifique)
+    # ==========================================
+    else:
+        vestiaire_data = auth_profile.get("vestiaire_data", {})
+        current_categorie = vestiaire_data.get("categorie", "Inconnue")
+
+        with st.container(border=True):
+            st.markdown(f"### 🎯 Envoi de Notification - Catégorie : {current_categorie}")
+            st.caption(f"Vous êtes connecté pour la catégorie [{current_categorie}]. Vous pouvez envoyer des notifications uniquement à vos membres.")
+
+            cat_title = st.text_input("Titre de la notification :", key="notif_cat_title_restreint")
+            cat_msg = st.text_area("Message (corps) :", height=100, key="notif_cat_msg_restreint")
+
+            if st.button(f"🚀 ENVOYER À [{current_categorie}]", type="primary", key="btn_send_cat_restreint"):
+                if not cat_title.strip() or not cat_msg.strip():
+                    st.warning("Veuillez remplir le titre et le corps du message.")
+                else:
+                    with st.spinner(f"Envoi vers la catégorie [{current_categorie}]..."):
+                        succes, message = _post_api_notification(current_categorie, cat_title.strip(), cat_msg.strip())
+                    if succes:
+                        st.success(message)
+                    else:
+                        st.error(message)
