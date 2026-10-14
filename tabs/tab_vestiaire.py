@@ -196,6 +196,9 @@ def render_vestiaire_tab(data, manager):
     # ==========================================
     # SECTION EFFECTIF / JOUEURS
     # ==========================================
+    # ==========================================
+    # SECTION EFFECTIF / JOUEURS
+    # ==========================================
     with st.expander("⚽ Effectif Complet", expanded=True):
         col_p_btn1, col_p_btn2 = st.columns([2, 2])
         with col_p_btn1:
@@ -206,15 +209,16 @@ def render_vestiaire_tab(data, manager):
         joueurs = v_data.setdefault("tous_les_joueurs", [])
 
         if joueurs:
-            # Affichage en tableau résumé
+            # Affichage en tableau résumé avec Modifier et Supprimer côte à côte
             for j_idx, j in enumerate(joueurs):
-                col_j_info, col_j_act = st.columns([5, 1])
+                col_j_info, col_j_edit, col_j_del = st.columns([4, 1, 1])
                 with col_j_info:
-                    st.markdown(f"**{j_idx + 1}. {j.get('nom', '').upper()} {j.get('prenom', '')}** — *{j.get('poste', 'Poste non défini')}* (Licence: {j.get('licence', 'N/A')})")
-                with col_j_act:
+                    st.markdown(f"**{j_idx + 1}. {j.get('nom', '').upper()} {j.get('prenom', '')}** — *{j.get('poste', 'Poste non défini')}*")
+                with col_j_edit:
                     if st.button("✏️", key=f"edit_p_{j_idx}", help="Modifier"):
                         st.session_state.editing_player_idx = j_idx
                         st.rerun()
+                with col_j_del:
                     if st.button("🗑️", key=f"del_p_{j_idx}", help="Supprimer"):
                         joueurs.pop(j_idx)
                         st.rerun()
@@ -262,7 +266,7 @@ def render_vestiaire_tab(data, manager):
 
             col_f_save, col_f_cancel = st.columns(2)
             with col_f_save:
-                if st.button("✅ Enregistrer le joueur", type="primary", use_container_width=True):
+                if st.button("✅ Enregistrer", type="primary", use_container_width=True, key="btn_save_player"):
                     if not p_nom.strip() or not p_prenom.strip():
                         st.error("Le nom et le prénom sont obligatoires.")
                     else:
@@ -288,12 +292,7 @@ def render_vestiaire_tab(data, manager):
                         st.rerun()
 
             with col_f_cancel:
-                if st.button("Annuler", use_container_width=True):
-                    st.session_state.editing_player_idx = None
-                    st.rerun()
-
-            with col_f_cancel:
-                if st.button("Annuler", use_container_width=True):
+                if st.button("Annuler", use_container_width=True, key="btn_cancel_player"):
                     st.session_state.editing_player_idx = None
                     st.rerun()
 
