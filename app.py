@@ -81,6 +81,49 @@ st.markdown("""
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
     }
 
+    
+    /* Navigation horizontale avec apparence d'onglets */
+    div[data-testid="stRadio"] > div[role="radiogroup"] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    /* Chaque option devient un onglet */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label {
+        background-color: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 8px 8px 0 0;
+        padding: 8px 14px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    
+    /* Masquer les cercles de sélection */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label > div:first-child {
+        display: none;
+    }
+    
+    /* Couleur au survol */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:hover {
+        background-color: #334155;
+    }
+    
+    /* Texte des onglets */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label p {
+        color: #f8fafc !important;
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    /* Onglet sélectionné */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:checked) {
+        background-color: #152238;
+        border-color: #f7ec3f;
+        border-bottom: 3px solid #f7ec3f;
+    }
+
+
     /* 4. ONGLETS (Tabs) */
     button[data-baseweb="tab"] {
         color: #94a3b8 !important;
