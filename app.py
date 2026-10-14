@@ -97,23 +97,35 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    /* 6. STYLE ET COMPACTAGE DES FILE UPLOADERS */
+   /* 1. Masquer totalement le texte et les instructions de la zone de dépôt (y compris la limite de taille) */
+    [data-testid="stFileUploaderInstructions"] {
+        display: none !important;
+    }
+
+    /* 2. Réduire la taille du composant upload pour qu'il n'occupe que l'espace du bouton */
     div[data-testid="stFileUploader"] {
         width: fit-content !important;
         display: inline-block !important;
     }
+
     div[data-testid="stFileUploader"] section {
         padding: 0 !important;
         background-color: transparent !important;
         border: none !important;
-        width: auto !important;
+        min-height: 0px !important;
+        height: auto !important;
     }
+
+    /* 3. Style compact du bouton d'upload */
     div[data-testid="stFileUploader"] section button {
         background-color: #1e293b !important;
         color: #f1f5f9 !important;
         border: 1px solid #334155 !important;
         border-radius: 8px !important;
+        padding: 4px 12px !important;
+        min-height: 0px !important;
     }
+
     div[data-testid="stFileUploader"] section button:hover {
         border-color: #3b82f6 !important;
         background-color: #334155 !important;
