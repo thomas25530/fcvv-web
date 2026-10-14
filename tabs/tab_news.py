@@ -1,11 +1,11 @@
+# -*- coding: utf-8 -*-
 import streamlit as st
-from datetime import datetime
 import re
-import requests
+from datetime import datetime
 import hashlib
+import requests
 from pathlib import Path
 from PIL import Image as PILImage
-from io import BytesIO
 
 def render_news_tab(data, config_manager):
     st.subheader("📰 Gestion des Actualités (News)")
@@ -40,7 +40,7 @@ def render_news_tab(data, config_manager):
 
     st.divider()
 
-    # --- SECTION APERÇU VISUEL (S'affiche en haut si demandé) ---
+    # --- SECTION APERÇU VISUEL (Style Mobile) ---
     if st.session_state.preview_article:
         art = st.session_state.preview_article
         with st.container(border=True):
@@ -52,16 +52,13 @@ def render_news_tab(data, config_manager):
                     st.session_state.preview_article = None
                     st.rerun()
 
-            # Rendu visuel simulant l'application Kivy
             st.markdown(f"## {art['title'] or 'Sans titre'}")
             st.caption(f"📅 {art['date']}")
             
-            # Affichage de la première image avec gestion du cache URL
             valid_images = [img.strip() for img in art["images"] if img.strip()]
             if valid_images:
                 first_url = valid_images[0]
                 try:
-                    # Cache local pour les images distantes
                     cache_dir = Path.home() / "Documents" / "FCVV" / "cache_images_admin"
                     cache_dir.mkdir(parents=True, exist_ok=True)
                     img_path = cache_dir / f"{hashlib.md5(first_url.encode()).hexdigest()}.png"
@@ -81,7 +78,6 @@ def render_news_tab(data, config_manager):
                 st.info("Aucune image renseignée pour cet article.")
 
             st.markdown("---")
-            # Description textuelle
             st.markdown(art['description'])
         st.divider()
 
@@ -90,7 +86,9 @@ def render_news_tab(data, config_manager):
     
     for idx, article in enumerate(st.session_state.news_list):
         title_display = article['title'] if article['title'] else 'Sans titre'
-        with st.expander(f"Article {idx + 1} : {title_display}", expanded=False):
+        is_new_or_empty = not article['title']
+        
+        with st.expander(f"Article {idx + 1} : {title_display}", expanded=is_new_or_empty):
             
             col1, col2 = st.columns([3, 1])
             with col1:
@@ -102,14 +100,40 @@ def render_news_tab(data, config_manager):
             images_to_remove = []
             
             for img_idx, img_url in enumerate(article["images"]):
-                col_img, col_btn_del = st.columns([5, 1])
-                with col_img:
+                col_img_txt, col_img_up, col_btn_del = st.columns([5, 2, 1])
+                
+                # Champ d'URL texte
+                with col_img_txt:
                     article["images"][img_idx] = st.text_input(
                         f"URL Image {img_idx + 1}", 
                         value=img_url, 
                         key=f"news_img_{idx}_{img_idx}",
+                        label_visibility="collapsed",
+                        placeholder="https://..."
+                    )
+                
+                # Uploader Google Drive réutilisé avec get_news_folder_id()
+                with col_img_up:
+                    uploaded_file = st.file_uploader(
+                        "📁", type=["png", "jpg", "jpeg", "webp"], 
+                        key=f"up_news_img_{idx}_{img_idx}", 
                         label_visibility="collapsed"
                     )
+                    if uploaded_file is not None:
+                        try:
+                            with st.spinner("Upload vers Drive..."):
+                                news_folder_id = config_manager.get_news_folder_id()
+                                _, file_url = config_manager.upload_uploaded_file_to_drive(
+                                    uploaded_file, news_folder_id
+                                )
+                                if file_url:
+                                    article["images"][img_idx] = file_url
+                                    st.success("OK !")
+                                    st.rerun()
+                        except Exception as e:
+                            st.error(f"Erreur d'upload : {e}")
+
+                # Bouton de suppression d'image
                 with col_btn_del:
                     if st.button("❌", key=f"del_img_{idx}_{img_idx}"):
                         images_to_remove.append(img_idx)
@@ -132,9 +156,9 @@ def render_news_tab(data, config_manager):
                 key=f"news_desc_{idx}"
             )
 
-            col_act1, col_act2, col_space = st.columns([1, 1, 4])
+            col_act1, col_act2, _ = st.columns([1, 1, 4])
             with col_act1:
-                if st.button("🗑 Supprimer", key=f"del_news_{idx}", type="secondary"):
+                if st.button("🗑 Supprimer l'article", key=f"del_news_{idx}", type="secondary"):
                     articles_to_delete.append(idx)
             
             with col_act2:
@@ -147,6 +171,7 @@ def render_news_tab(data, config_manager):
             st.session_state.news_list.pop(i)
         st.rerun()
 
+    # --- SYNCHRONISATION FINALE DANS DATA ---
     validated_list = []
     for art in st.session_state.news_list:
         title = art["title"].strip()
