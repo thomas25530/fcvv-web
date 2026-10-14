@@ -337,6 +337,7 @@ if is_super_admin:
 st.divider()
 
 # --- SYSTÈMES D'ONGLETS ADAPTÉS AUX DROITS DU PROFIL ---
+
 if is_super_admin:
     tab_names = [
         "News",
@@ -348,46 +349,62 @@ if is_super_admin:
         "Partenaires",
         "About",
         "Vestiaire",
-        "Notification"
+        "Notification",
     ]
-    tabs = st.tabs(tab_names)
 
-    with tabs[0]:
-        render_news_tab(data, manager)
-    with tabs[1]: # Ajustez l'index selon votre liste d'onglets
-        render_agenda_resultats_tab(data, manager)
-    with tabs[2]:
-        render_classements_tab(data, manager)
-    with tabs[3]:
-        render_organigramme_tab(data, manager)
-    with tabs[4]:
-        render_divers_tab(data, manager)
-    with tabs[5]:
-        render_boutique_tab(data, manager)
-    with tabs[6]:
-        render_partenaires_tab(data, manager)
-    with tabs[7]:
-        render_about_tab(data, manager)
-    with tabs[8]: # ou selon votre index d'onglet
-        render_vestiaire_tab(data, manager)
-    with tabs[9]:
-        render_notification_tab(data, manager)
+    selected_tab = st.radio(
+        "Navigation",
+        tab_names,
+        horizontal=True,
+        label_visibility="collapsed",
+        key="admin_selected_tab",
+    )
+
+    renderers = {
+        "News": render_news_tab,
+        "Agenda & Résultats": render_agenda_resultats_tab,
+        "Classements": render_classements_tab,
+        "Organigramme": render_organigramme_tab,
+        "Divers": render_divers_tab,
+        "Boutique": render_boutique_tab,
+        "Partenaires": render_partenaires_tab,
+        "About": render_about_tab,
+        "Vestiaire": render_vestiaire_tab,
+        "Notification": render_notification_tab,
+    }
+
+    renderers[selected_tab](data, manager)
 
 else:
-    # Profil restreint (ex: Vestiaire spécifique)
-    st.info(f"Connecté en tant que gestionnaire de la catégorie : **{profile.get('vestiaire_data', {}).get('categorie', '')}**")
-    tab_names = ["Vestiaire", "Notification"]
-    tabs = st.tabs(tab_names)
+    st.info(
+        "Connecté en tant que gestionnaire de la catégorie : "
+        f"**{profile.get('vestiaire_data', {}).get('categorie', '')}**"
+    )
+
+    selected_tab = st.radio(
+        "Navigation",
+        ["Vestiaire", "Notification"],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="category_selected_tab",
+    )
 
     file_id = profile["vestiaire_data"]["file_id"]
 
-    st.session_state.vestiaire_current_file_id = file_id
-    st.session_state.vestiaire_data = manager.load_yaml_from_drive(file_id)
-    with tabs[0]:
+    if selected_tab == "Vestiaire":
+        if (
+            st.session_state.get("vestiaire_current_file_id") != file_id
+        ):
+            st.session_state.vestiaire_current_file_id = file_id
+            st.session_state.vestiaire_data = (
+                manager.load_yaml_from_drive(file_id)
+            )
+
         render_vestiaire_tab(data, manager)
 
-    with tabs[1]:
+    elif selected_tab == "Notification":
         render_notification_tab(data, manager)
+
 
 # --- BOUTON DE SAUVEGARDE GLOBALE (UNIQUEMENT POUR LE SUPER ADMIN) ---
 if is_super_admin:
