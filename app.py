@@ -14,6 +14,7 @@ from tabs.tab_divers import render_divers_tab
 from tabs.tab_organigramme import render_organigramme_tab
 from tabs.tab_classements import render_classements_tab
 from tabs.tab_vestiaire import render_vestiaire_tab
+from tabs.tab_agenda_resultats import render_agenda_resultats_tab
 
 # ID de votre fichier YAML principal sur Google Drive
 FILE_ID = "161ngxPQz66QumHjG_us6qqyAtA0GPX2x"
@@ -353,12 +354,8 @@ if is_super_admin:
 
     with tabs[0]:
         render_news_tab(data, manager)
-    with tabs[1]:
-        st.subheader("🗓️ Agenda & Résultats")
-        agenda_data = data["appli"].get("agenda", {})
-        resultats_data = data["appli"].get("resultats", {})
-        st.write("Agenda :", agenda_data)
-        st.write("Résultats :", resultats_data)
+    with tabs[1]: # Ajustez l'index selon votre liste d'onglets
+        render_agenda_resultats_tab(data, manager)
     with tabs[2]:
         render_classements_tab(data, manager)
     with tabs[3]:
