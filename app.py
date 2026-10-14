@@ -208,7 +208,7 @@ def verify_login(selection, pwd):
             else:
                 st.error("Mot de passe incorrect pour cette catégorie.")
 
-# Si non connecté, affichage de l'écran de login
+# Si non connecté, affichage de l'écran de login ET de la maintenance du token en secours
 if st.session_state.auth_profile is None:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -226,6 +226,25 @@ if st.session_state.auth_profile is None:
         if st.button("Se connecter", type="primary", use_container_width=True):
             verify_login(selected_profile, password_input)
             
+        # --- SECOURS : MAINTENANCE TOKEN DIRECTEMENT SUR LE LOGIN EN CAS D'ERREUR ---
+        if st.session_state.load_error:
+            st.divider()
+            st.error(f"⚠️ Problème de connexion Google Drive : {st.session_state.load_error}")
+            with st.expander("🔑 Réparer l'accès (Mettre à jour le token.json)", expanded=True):
+                st.write("Si votre jeton a expiré, déposez votre nouveau fichier `token.json` ci-dessous :")
+                uploaded_token_login = st.file_uploader("Importer token.json de secours", type=["json"], key="token_login_uploader")
+                if uploaded_token_login is not None:
+                    if st.button("Appliquer et synchroniser ce nouveau token"):
+                        try:
+                            token_data = json.load(uploaded_token_login)
+                            manager.authenticate_with_token_info(token_data)
+                            st.session_state.config_data = manager.load_config()
+                            st.session_state.load_error = None
+                            st.success("Jeton mis à jour avec succès ! Rechargement...")
+                            st.rerun()
+                        except Exception as token_err:
+                            st.error(f"Erreur : {token_err}")
+
         st.stop()
 
 # Récupération du profil connecté
