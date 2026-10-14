@@ -26,6 +26,12 @@ st.set_page_config(
     page_icon=logo_favicon, 
     layout="wide"
 )
+# Initialisation sécurisée du ConfigManager avec mise en cache Streamlit
+@st.cache_resource
+def get_config_manager():
+    return ConfigManager(FILE_ID)
+
+manager = get_config_manager()
 
 st.markdown("""
 <style>
@@ -145,12 +151,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Initialisation sécurisée du ConfigManager avec mise en cache Streamlit
-@st.cache_resource
-def get_config_manager():
-    return ConfigManager(FILE_ID)
 
-manager = get_config_manager()
 
 # --- CHARGEMENT DES DONNÉES EN SESSION ---
 if "config_data" not in st.session_state:
