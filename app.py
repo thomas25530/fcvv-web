@@ -43,18 +43,24 @@ st.markdown("""
 
 st.markdown("""
 <style>
-    /* 1. FOND DE PAGE ET COULEUR DU TEXTE PRINCIPAL */
+    /* ==================================================
+       1. FOND DE PAGE ET TEXTE PRINCIPAL
+    ================================================== */
     .stApp {
         background-color: #0b1329 !important;
         color: #f8fafc !important;
     }
-    
+
     h1, h2, h3, h4, h5, h6, p, label, span {
-        color: #f8fafc !important;
+        color: #f8fafc;
     }
 
-    /* 2. CHAMPS ÉDITABLES (Inputs & TextAreas) */
-    .stTextInput input, .stTextArea textarea, div[data-baseweb="select"] > div {
+    /* ==================================================
+       2. CHAMPS ÉDITABLES
+    ================================================== */
+    .stTextInput input,
+    .stTextArea textarea,
+    div[data-baseweb="select"] > div {
         background-color: #1e293b !important;
         border: 1px solid #334155 !important;
         border-radius: 8px !important;
@@ -62,102 +68,108 @@ st.markdown("""
         font-weight: 500 !important;
     }
 
-    .stTextInput input:hover, .stTextArea textarea:hover, div[data-baseweb="select"]:hover {
+    .stTextInput input:hover,
+    .stTextArea textarea:hover,
+    div[data-baseweb="select"]:hover > div {
         border-color: #64748b !important;
     }
 
-    .stTextInput input:focus, .stTextArea textarea:focus {
+    .stTextInput input:focus,
+    .stTextArea textarea:focus {
         background-color: #1e293b !important;
         border-color: #3b82f6 !important;
         box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4) !important;
         color: #ffffff !important;
     }
 
-    /* 3. CONTENEURS / CARTES / EXPANDERS */
-    div[data-testid="stVerticalBlock"] div[data-testid="stContainer"], 
-    .stExpander {
+    /* ==================================================
+       3. CONTENEURS, CARTES ET EXPANDERS
+    ================================================== */
+    div[data-testid="stVerticalBlock"] div[data-testid="stContainer"],
+    div[data-testid="stExpander"] {
         background-color: #152238 !important;
         border: 1px solid #1e293b !important;
         border-radius: 10px !important;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
     }
 
-    
-    
-    /* NAVIGATION : transformer les boutons radio en vrais onglets */
-    div[data-testid="stRadio"] [role="radiogroup"] {
+    /* ==================================================
+       4. NAVIGATION RADIO
+       Style horizontal sans modifier la structure interne
+       de Streamlit, afin de préserver le texte.
+    ================================================== */
+    div[data-testid="stRadio"] > div[role="radiogroup"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: wrap !important;
+        align-items: stretch !important;
         gap: 6px !important;
     }
-    
-    /* Chaque option devient un onglet */
-    div[data-testid="stRadio"] [role="radiogroup"] > label {
-        background: #1e293b !important;
+
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label {
+        background-color: #1e293b !important;
         border: 1px solid #334155 !important;
         border-radius: 8px 8px 0 0 !important;
         padding: 8px 14px !important;
         margin: 0 !important;
         cursor: pointer !important;
-        min-width: fit-content !important;
+        transition: background-color 0.2s ease,
+                    border-color 0.2s ease !important;
     }
-    
-    /* Masquer le composant radio, quelle que soit sa structure interne */
-    div[data-testid="stRadio"] [role="radiogroup"] > label > div:first-child,
-    div[data-testid="stRadio"] [role="radiogroup"] > label > label,
-    div[data-testid="stRadio"] [role="radiogroup"] input[type="radio"],
-    div[data-testid="stRadio"] [role="radiogroup"] [data-baseweb="radio"] {
-        display: none !important;
-        visibility: hidden !important;
-        width: 0 !important;
-        height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
+
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label:hover {
+        background-color: #334155 !important;
+        border-color: #64748b !important;
     }
-    
-    /* Texte */
-    div[data-testid="stRadio"] [role="radiogroup"] > label p {
+
+    /* Texte des options radio */
+    div[data-testid="stRadio"] > div[role="radiogroup"] > label p {
         color: #f8fafc !important;
         font-weight: 600 !important;
         margin: 0 !important;
     }
-    
-    /* Survol */
-    div[data-testid="stRadio"] [role="radiogroup"] > label:hover {
-        background: #334155 !important;
-    }
-    
-    /* Onglet sélectionné */
-    div[data-testid="stRadio"] [role="radiogroup"] > label:has(input:checked) {
-        background: #152238 !important;
-        border: 1px solid #f7ec3f !important;
-        border-bottom: 3px solid #f7ec3f !important;
-    }
-    
 
+    /* Couleur du texte radio */
+    div[data-testid="stRadio"] [data-testid="stMarkdownContainer"] p {
+        color: #f8fafc !important;
+    }
 
-    /* 4. ONGLETS (Tabs) */
+    /* Ne pas masquer les éléments internes du radio :
+       leur structure varie selon la version de Streamlit. */
+
+    /* ==================================================
+       5. VÉRITABLES ONGLETS STREAMLIT (st.tabs)
+    ================================================== */
     button[data-baseweb="tab"] {
-        color: #94a3b8 !important;
+        color: #cbd5e1 !important;
         font-weight: 600 !important;
-    }
-    
-    button[aria-selected="true"] {
-        color: #f7ec3f !important;
-        border-bottom-color: #f7ec3f !important;
+        background-color: #152238 !important;
     }
 
-    /* 5. BOUTONS AMÉLIORÉS */
+    button[data-baseweb="tab"]:hover {
+        color: #ffffff !important;
+        background-color: #1e293b !important;
+    }
+
+    button[data-baseweb="tab"][aria-selected="true"] {
+        color: #f7ec3f !important;
+        border-bottom: 2px solid #f7ec3f !important;
+    }
+
+    /* ==================================================
+       6. BOUTONS PRINCIPAUX ET SECONDAIRES
+    ================================================== */
     button[kind="primary"] {
         background-color: #16a34a !important;
         color: #ffffff !important;
-        border: none !important;
+        border: 1px solid #16a34a !important;
         border-radius: 8px !important;
-        font-weight: bold !important;
+        font-weight: 700 !important;
     }
+
     button[kind="primary"]:hover {
         background-color: #15803d !important;
+        border-color: #15803d !important;
     }
 
     button[kind="secondary"] {
@@ -165,18 +177,28 @@ st.markdown("""
         color: #f8fafc !important;
         border: 1px solid #475569 !important;
         border-radius: 8px !important;
-    }
-    button[kind="secondary"]:hover {
-        background-color: #475569 !important;
+        font-weight: 600 !important;
     }
 
-    .stAlert {
+    button[kind="secondary"]:hover {
+        background-color: #475569 !important;
+        border-color: #64748b !important;
+        color: #ffffff !important;
+    }
+
+    /* ==================================================
+       7. ALERTES
+    ================================================== */
+    div[data-testid="stAlert"] {
         border-radius: 8px !important;
     }
 
-    /* 6. COMPACTAGE ET NETTOYAGE TOTAL DU FILE UPLOADER */
+    /* ==================================================
+       8. FILE UPLOADER COMPACT
+    ================================================== */
     div[data-testid="stFileUploader"] {
         width: fit-content !important;
+        max-width: 100% !important;
         display: inline-block !important;
     }
 
@@ -184,20 +206,19 @@ st.markdown("""
         padding: 0 !important;
         background-color: transparent !important;
         border: none !important;
-        min-height: 0px !important;
+        min-height: 0 !important;
         height: auto !important;
         display: flex !important;
         align-items: center !important;
     }
 
-    /* Style du bouton d'upload */
     div[data-testid="stFileUploader"] section button {
         background-color: #1e293b !important;
         color: #f1f5f9 !important;
         border: 1px solid #334155 !important;
         border-radius: 8px !important;
         padding: 4px 12px !important;
-        min-height: 0px !important;
+        min-height: 0 !important;
     }
 
     div[data-testid="stFileUploader"] section button:hover {
@@ -205,11 +226,27 @@ st.markdown("""
         background-color: #334155 !important;
     }
 
-    /* Masquer le texte "200MB per file..." et les instructions sous/à côté du bouton */
-    [data-testid="stFileUploaderInstructions"],
-    div[data-testid="stFileUploader"] small,
-    div[data-testid="stFileUploader"] section > div:not(:has(button)) {
+    /* Masquer les instructions secondaires de l'upload */
+    div[data-testid="stFileUploader"] [data-testid="stFileUploaderInstructions"],
+    div[data-testid="stFileUploader"] small {
         display: none !important;
+    }
+
+    /* ==================================================
+       9. TABLEAUX
+    ================================================== */
+    div[data-testid="stDataFrame"],
+    div[data-testid="stTable"] {
+        border: 1px solid #334155 !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+    }
+
+    /* ==================================================
+       10. SÉPARATEURS
+    ================================================== */
+    hr {
+        border-color: #334155 !important;
     }
 </style>
 """, unsafe_allow_html=True)
