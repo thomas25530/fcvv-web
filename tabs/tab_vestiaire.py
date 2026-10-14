@@ -421,7 +421,7 @@ def render_vestiaire_tab(data, manager):
                             st.rerun()
 
                 with col_f_cancel:
-                    if st.button("Annuler", use_container_width=True, key="btn_cancel_p_new"):
+                    if st.button("Annuler", use_container_width=True, key=f"btn_cancel_p_{j_idx}"):
                         st.session_state.editing_player_idx = None
                         st.rerun()
 
@@ -514,25 +514,25 @@ def render_vestiaire_tab(data, manager):
         groupes = v_data.get("groupes", {})
         groupes_to_remove = []
 
-        for g_nom, membres_in_groupe in list(groupes.items()):
+        for g_idx, (g_nom, membres_in_groupe) in enumerate(list(groupes.items())):
             with st.container(border=True):
-                new_g_nom = st.text_input("Nom du groupe", value=g_nom, key=f"v_g_nom_{g_nom}")
+                new_g_nom = st.text_input("Nom du groupe", value=g_nom, key=f"v_g_nom_{g_idx}")
                 
                 st.markdown("**Sélection des joueurs :**")
                 selected_membres = []
                 
-                for j in joueurs:
+                for j_idx, j in enumerate(joueurs):
                     j_full_name = f"{j.get('nom', '').upper()} {j.get('prenom', '')}".strip()
                     is_checked = any(j.get('nom', '').lower() in m.lower() and j.get('prenom', '').lower() in m.lower() for m in membres_in_groupe)
                     
-                    if st.checkbox(j_full_name, value=is_checked, key=f"chk_grp_{g_nom}_{j_full_name}"):
+                    if st.checkbox(j_full_name, value=is_checked, key=f"chk_grp_{g_idx}_{j_idx}"):
                         selected_membres.append(j_full_name)
 
-                if st.button("🗑️ Supprimer ce groupe", key=f"del_grp_{g_nom}"):
+                if st.button("🗑️ Supprimer ce groupe", key=f"del_grp_{g_idx}"):
                     groupes_to_remove.append(g_nom)
 
                 if new_g_nom != g_nom:
-                    groupes.pop(g_nom)
+                    groupes.pop(g_nom, None)
                 groupes[new_g_nom] = selected_membres
 
         for g in groupes_to_remove:
