@@ -22,7 +22,7 @@ POSTES_FOOTBALL = [
 
 
 
-#@st.fragment
+@st.fragment
 def render_effectif(v_data, manager):
     """Affiche et gère l’effectif dans un fragment Streamlit isolé."""
     with st.expander("⚽ Effectif Complet", expanded=False):
