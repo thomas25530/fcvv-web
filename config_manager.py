@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 from datetime import datetime
 import yaml
+import requests
 import streamlit as st
 
 from google.oauth2.credentials import Credentials
@@ -28,7 +29,6 @@ class ConfigManager:
         self.base_dir = Path(".") / "fcvv_cache_data"
         self.cache_path = self.base_dir / "config_cache.yaml"
 
-    
     def authenticate_with_token_info(self, token_info):
         """Force l'authentification avec un dictionnaire de token fourni directement (ex: via l'UI) et le sauvegarde"""
         try:
@@ -47,11 +47,9 @@ class ConfigManager:
             return True
         except Exception as e:
             raise Exception(f"Format de token invalide : {e}")
-    
+
     def authenticate(self):
         """Authentification Google Drive adaptée pour le web/cloud et le local avec rafraîchissement automatique"""
-        
-        # Récupération optionnelle des identifiants OAuth globaux s'ils sont stockés dans les secrets
         client_id = None
         client_secret = None
         try:
@@ -84,7 +82,6 @@ class ConfigManager:
                 except Exception as e:
                     print(f"Erreur de lecture du token local : {e}")
 
-        # S'assurer que les client_id / client_secret sont rattachés aux crédits si disponibles et manquants
         if self.creds and not self.creds.client_id and client_id:
             self.creds.client_id = client_id
         if self.creds and not self.creds.client_secret and client_secret:
@@ -111,8 +108,31 @@ class ConfigManager:
             "drive", "v3", credentials=self.creds, static_discovery=True
         )
 
+    def load_config_public(self):
+        """Télécharge le YAML directement via l'URL publique de téléchargement Google Drive (SANS TOKEN REQUIS)"""
+        try:
+            url = f"https://docs.google.com/uc?export=download&id={self.file_id}"
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200 and len(response.text.strip()) > 0:
+                # Vérifier que ce n'est pas une page HTML de redirection Google (ex: fichier trop grand ou erreur)
+                if "<html" not in response.text.lower():
+                    self.data = yaml.safe_load(response.text) or {}
+                    # Mettre à jour le cache local en arrière-plan
+                    try:
+                        self.base_dir.mkdir(parents=True, exist_ok=True)
+                        with open(self.cache_path, "w", encoding="utf-8") as f:
+                            yaml.dump(self.data, f, allow_unicode=True, sort_keys=False, default_flow_style=False)
+                    except Exception:
+                        pass
+                    return self.data
+            
+            # Si l'URL publique échoue, on tente le cache local ou le load_config classique
+            return self._load_local_cache()
+        except Exception:
+            return self._load_local_cache()
+
     def load_config(self):
-        """Télécharge le fichier YAML depuis Drive"""
+        """Télécharge le fichier YAML depuis Drive via l'API (nécessite le token)"""
         try:
             if not self.service:
                 self.authenticate()
@@ -158,7 +178,7 @@ class ConfigManager:
         return self.data
 
     def save_config(self, new_data):
-        """Enregistre sur Google Drive"""
+        """Enregistre sur Google Drive (nécessite l'authentification token)"""
         self.data = new_data
         try:
             self.base_dir.mkdir(parents=True, exist_ok=True)
