@@ -48,7 +48,7 @@ def render_divers_tab(data, manager):
 
         for i, stage in enumerate(stages_list):
             stage_name = stage.get("nom", "").strip() or f"Stage #{i + 1}"
-            with st.expander(f"🎪 {stage_name}", expanded=(i == 0)):
+            with st.expander(f"🎪 {stage_name}", expanded=False):
                 col_fields_1, col_fields_2 = st.columns(2)
 
                 with col_fields_1:
@@ -77,7 +77,6 @@ def render_divers_tab(data, manager):
                         value=stage.get("tarif", ""),
                         key=f"stage_tarif_{i}",
                     )
-
                 with col_fields_2:
                     stage["repas"] = st.text_input(
                         "Information Repas",
