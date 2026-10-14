@@ -18,6 +18,7 @@ st.set_page_config(
 )
 
 # Initialisation sécurisée du ConfigManager avec mise en cache Streamlit
+
 @st.cache_resource
 def get_config_manager():
     return ConfigManager(FILE_ID)
