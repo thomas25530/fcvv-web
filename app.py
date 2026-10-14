@@ -82,46 +82,58 @@ st.markdown("""
     }
 
     
-    /* Navigation horizontale avec apparence d'onglets */
-    div[data-testid="stRadio"] > div[role="radiogroup"] {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
+    
+    /* NAVIGATION : transformer les boutons radio en vrais onglets */
+    div[data-testid="stRadio"] [role="radiogroup"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
     }
     
     /* Chaque option devient un onglet */
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label {
-        background-color: #1e293b;
-        border: 1px solid #334155;
-        border-radius: 8px 8px 0 0;
-        padding: 8px 14px;
-        cursor: pointer;
-        transition: background-color 0.2s ease;
+    div[data-testid="stRadio"] [role="radiogroup"] > label {
+        background: #1e293b !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px 8px 0 0 !important;
+        padding: 8px 14px !important;
+        margin: 0 !important;
+        cursor: pointer !important;
+        min-width: fit-content !important;
     }
     
-    /* Masquer les cercles de sélection */
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label > div:first-child {
-        display: none;
+    /* Masquer le composant radio, quelle que soit sa structure interne */
+    div[data-testid="stRadio"] [role="radiogroup"] > label > div:first-child,
+    div[data-testid="stRadio"] [role="radiogroup"] > label > label,
+    div[data-testid="stRadio"] [role="radiogroup"] input[type="radio"],
+    div[data-testid="stRadio"] [role="radiogroup"] [data-baseweb="radio"] {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
     
-    /* Couleur au survol */
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:hover {
-        background-color: #334155;
-    }
-    
-    /* Texte des onglets */
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label p {
+    /* Texte */
+    div[data-testid="stRadio"] [role="radiogroup"] > label p {
         color: #f8fafc !important;
-        font-weight: 600;
-        margin: 0;
+        font-weight: 600 !important;
+        margin: 0 !important;
+    }
+    
+    /* Survol */
+    div[data-testid="stRadio"] [role="radiogroup"] > label:hover {
+        background: #334155 !important;
     }
     
     /* Onglet sélectionné */
-    div[data-testid="stRadio"] > div[role="radiogroup"] > label:has(input:checked) {
-        background-color: #152238;
-        border-color: #f7ec3f;
-        border-bottom: 3px solid #f7ec3f;
+    div[data-testid="stRadio"] [role="radiogroup"] > label:has(input:checked) {
+        background: #152238 !important;
+        border: 1px solid #f7ec3f !important;
+        border-bottom: 3px solid #f7ec3f !important;
     }
+    
 
 
     /* 4. ONGLETS (Tabs) */
