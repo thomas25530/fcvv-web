@@ -18,7 +18,6 @@ st.set_page_config(
 )
 
 # Initialisation sécurisée du ConfigManager avec mise en cache Streamlit
-
 @st.cache_resource
 def get_config_manager():
     return ConfigManager(FILE_ID)
@@ -37,7 +36,7 @@ if "config_data" not in st.session_state:
 
 data = st.session_state.config_data
 
-# --- SYSTÈME D'AUTHENTIFICATION (Inspiré de votre version Windows) ---
+# --- SYSTÈME D'AUTHENTIFICATION ---
 if "auth_profile" not in st.session_state:
     st.session_state.auth_profile = None
 
@@ -89,7 +88,6 @@ if st.session_state.auth_profile is None:
         st.title("⚽ FC VALDAHON VERCEL")
         st.subheader("Connexion FCVV Admin")
         
-        # Récupération des catégories de vestiaires pour le selectbox
         vestiaires = data.get("appli", {}).get("vestiaire", [])
         cat_values = [item.get("categorie") for item in vestiaires if isinstance(item, dict) and item.get("categorie")]
         combo_options = ["Administrateur"] + cat_values
@@ -100,11 +98,12 @@ if st.session_state.auth_profile is None:
         if st.button("Se connecter", type="primary", use_container_width=True):
             verify_login(selected_profile, password_input)
             
-        st.stop() # Bloque l'exécution du reste tant que l'authentification n'est pas réussie
+        st.stop()
 
 # Récupération du profil connecté
 profile = st.session_state.auth_profile
 allowed_tabs = profile.get("allowed_tabs")
+is_super_admin = (profile.get("type") == "super_admin")
 
 # Gestion des alertes de connexion au Drive
 if st.session_state.load_error:
@@ -128,7 +127,7 @@ with col_logout:
         st.rerun()
 
 # Si Super Admin, on autorise la modification de la saison et la maintenance du token
-if allowed_tabs == "all":
+if is_super_admin:
     with st.expander("📅 Configuration de la Saison & Infos techniques", expanded=False):
         col1, col2, col3 = st.columns([2, 2, 4])
         
@@ -170,7 +169,7 @@ if allowed_tabs == "all":
 st.divider()
 
 # --- SYSTÈMES D'ONGLETS ADAPTÉS AUX DROITS DU PROFIL ---
-if allowed_tabs == "all":
+if is_super_admin:
     tab_names = [
         "News",
         "Agenda & Résultats",
@@ -254,18 +253,19 @@ else:
     with tabs[1]:
         render_notification_tab(data, manager)
 
-# --- BOUTON DE SAUVEGARDE GLOBALE ---
-st.divider()
-col_save_left, col_save_right = st.columns([6, 2])
+# --- BOUTON DE SAUVEGARDE GLOBALE (UNIQUEMENT POUR LE SUPER ADMIN) ---
+if is_super_admin:
+    st.divider()
+    col_save_left, col_save_right = st.columns([6, 2])
 
-with col_save_right:
-    if st.button("💾 SAUVEGARDE GLOBALE", type="primary", use_container_width=True):
-        try:
-            with st.spinner("Enregistrement sur Google Drive en cours..."):
-                manager.save_config(data)
-            st.success("Modifications enregistrées et synchronisées avec succès !")
-        except Exception as err:
-            st.error(f"Erreur lors de la sauvegarde : {err}")
+    with col_save_right:
+        if st.button("💾 SAUVEGARDE GLOBALE", type="primary", use_container_width=True):
+            try:
+                with st.spinner("Enregistrement sur Google Drive en cours..."):
+                    manager.save_config(data)
+                st.success("Modifications enregistrées et synchronisées avec succès !")
+            except Exception as err:
+                st.error(f"Erreur lors de la sauvegarde : {err}")
 
 # --- STYLE CSS GLOBAL ---
 st.markdown("""
