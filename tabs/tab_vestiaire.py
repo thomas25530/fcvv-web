@@ -21,6 +21,305 @@ POSTES_FOOTBALL = [
 ]
 
 
+
+@st.fragment
+def render_effectif(v_data, manager):
+    """Affiche et gère l’effectif dans un fragment Streamlit isolé."""
+    with st.expander("⚽ Effectif Complet", expanded=False):
+        col_p_btn1, col_p_btn2 = st.columns([2, 2])
+        with col_p_btn1:
+            if st.button("➕ Ajouter un joueur", type="primary", key="add_player_modal_btn"):
+                st.session_state.editing_player_idx = "new"
+                st.session_state.show_csv_uploader = False
+                st.session_state.csv_rows_to_import = None
+        with col_p_btn2:
+            if st.button("📥 Importer depuis un CSV", type="secondary", key="open_csv_uploader_btn"):
+                st.session_state.show_csv_uploader = not st.session_state.get("show_csv_uploader", False)
+                st.session_state.editing_player_idx = None
+
+        joueurs = v_data.setdefault("tous_les_joueurs", [])
+
+        # --- GESTION DE L'UPLOAD DU FICHIER CSV ---
+        if st.session_state.get("show_csv_uploader", False):
+            with st.container(border=True):
+                st.markdown("#### 📥 Importer des joueurs par fichier CSV")
+                uploaded_csv = st.file_uploader("Sélectionner le fichier CSV FFF", type=["csv"], key="vestiaire_csv_file_input")
+
+                if uploaded_csv is not None:
+                    try:
+                        import csv
+                        import io
+
+                        bytes_data = uploaded_csv.getvalue()
+                        sample = bytes_data[:2048].decode("utf-8-sig", errors="ignore")
+                        delimiter = ";" if ";" in sample else ","
+
+                        f_text = io.TextIOWrapper(io.BytesIO(bytes_data), encoding="utf-8-sig")
+                        reader = csv.DictReader(f_text, delimiter=delimiter)
+                        rows = list(reader)
+
+                        if not rows:
+                            st.error("Le fichier CSV est vide.")
+                        else:
+                            st.session_state.csv_rows_to_import = rows
+                            st.session_state.show_csv_uploader = False
+                            st.success(f"{len(rows)} lignes lues avec succès ! Veuillez sélectionner les joueurs ci-dessous.")
+                    except Exception as err:
+                        st.error(f"Erreur lors de la lecture du fichier CSV : {err}")
+
+        # --- INTERFACE DE SÉLECTION DES JOUEURS DU CSV ---
+        if st.session_state.get("csv_rows_to_import"):
+            rows = st.session_state.csv_rows_to_import
+
+            def nettoyer_cat(cat_str):
+                return str(cat_str).split("(")[0].strip()
+
+            categories = sorted({
+                nettoyer_cat(row.get("Sous catégorie_1", ""))
+                for row in rows
+                if row.get("Sous catégorie_1", "").strip()
+            })
+
+            with st.container(border=True):
+                st.markdown("### 📋 Sélection des joueurs à importer")
+
+                selected_cat_import = st.selectbox("1. Choisir une catégorie :", categories, key="csv_select_cat")
+
+                filtered_indices = [
+                    idx for idx, r in enumerate(rows)
+                    if nettoyer_cat(r.get("Sous catégorie_1", "")) == selected_cat_import
+                ]
+
+                st.markdown(f"**2. Joueurs de la catégorie ({selected_cat_import}) :**")
+
+                if "csv_selected_indices" not in st.session_state:
+                    st.session_state.csv_selected_indices = set()
+
+                col_chk1, col_chk2 = st.columns(2)
+                with col_chk1:
+                    if st.button("Tout cocher pour cette catégorie", key="csv_check_all"):
+                        for idx in filtered_indices:
+                            st.session_state.csv_selected_indices.add(idx)
+                with col_chk2:
+                    if st.button("Tout décocher", key="csv_uncheck_all"):
+                        for idx in filtered_indices:
+                            st.session_state.csv_selected_indices.discard(idx)
+
+                for idx in filtered_indices:
+                    row = rows[idx]
+                    nom = row.get("Nom", "").strip().upper()
+                    prenom = row.get("Prénom", "").strip().capitalize()
+                    disp_name = f"{nom} {prenom}" if (nom or prenom) else f"Joueur #{idx+1}"
+
+                    is_checked = idx in st.session_state.csv_selected_indices
+                    checked = st.checkbox(disp_name, value=is_checked, key=f"csv_player_chk_{idx}")
+
+                    if checked:
+                        st.session_state.csv_selected_indices.add(idx)
+                    else:
+                        st.session_state.csv_selected_indices.discard(idx)
+
+                st.markdown("---")
+                total_selected = len(st.session_state.csv_selected_indices)
+                st.info(f"📊 **{total_selected}** joueur(s) sélectionné(s) au total pour l'importation.")
+
+                col_imp_val, col_imp_can = st.columns(2)
+                with col_imp_val:
+                    if st.button("✅ Valider l'importation des sélectionnés", type="primary", use_container_width=True):
+                        if total_selected == 0:
+                            st.warning("Veuillez cocher au moins un joueur.")
+                        else:
+                            effectif = v_data.setdefault("tous_les_joueurs", [])
+                            nb_importes = 0
+                            nb_mis_a_jour = 0
+
+                            for idx in st.session_state.csv_selected_indices:
+                                row = rows[idx]
+                                nom = row.get("Nom", "").strip().upper()
+                                prenom = row.get("Prénom", "").strip().capitalize()
+                                licence = row.get("Numéro personne_1", "").strip()
+                                tel = row.get("Mobile personnel_1", "").strip()
+
+                                tel_clean = "".join(filter(str.isdigit, tel))
+                                if tel_clean:
+                                    if len(tel_clean) == 9 and not tel_clean.startswith("0"):
+                                        tel = "0" + tel_clean
+                                    elif len(tel_clean) == 10 and not tel_clean.startswith("0"):
+                                        tel = "0" + tel_clean[1:]
+                                    else:
+                                        tel = tel_clean
+
+                                voie = row.get("Voie-rue_1", "").strip()
+                                cp = row.get("Code postal_1", "").strip()
+                                ville = row.get("Bureau distributeur_2", "").strip()
+                                adresse_complete = " ".join(filter(None, [voie, cp, ville]))
+
+                                donnees_csv = {
+                                    "nom": nom,
+                                    "prenom": prenom,
+                                    "categorie": nettoyer_cat(row.get("Sous catégorie_1", "")),
+                                    "date_naissance": row.get("Né(e) le_2", "").strip(),
+                                    "licence": licence,
+                                    "telephone": tel,
+                                    "email": row.get("Email principal_1", "").strip(),
+                                    "adresse": adresse_complete,
+                                }
+
+                                joueur_existant = None
+                                for j in effectif:
+                                    lic_ex = str(j.get("licence", "")).strip()
+                                    nom_ex = str(j.get("nom", "")).strip().upper()
+                                    pren_ex = str(j.get("prenom", "")).strip().capitalize()
+                                    if (licence and lic_ex == licence) or (nom_ex == nom and pren_ex == prenom):
+                                        joueur_existant = j
+                                        break
+
+                                if joueur_existant:
+                                    joueur_existant.update({k: v for k, v in donnees_csv.items() if v})
+                                    nb_mis_a_jour += 1
+                                else:
+                                    donnees_csv["poste"] = ""
+                                    donnees_csv["photo_url"] = ""
+                                    effectif.append(donnees_csv)
+                                    nb_importes += 1
+
+                            st.session_state.csv_rows_to_import = None
+                            st.session_state.csv_selected_indices = set()
+                            st.success(f"Importation réussie : {nb_importes} ajouté(s), {nb_mis_a_jour} mis à jour !")
+
+                with col_imp_can:
+                    if st.button("Annuler l'import", use_container_width=True):
+                        st.session_state.csv_rows_to_import = None
+                        st.session_state.csv_selected_indices = set()
+
+        # Formulaire si ajout d'un NOUVEAU joueur (affiché en haut de liste)
+        if st.session_state.editing_player_idx == "new":
+            with st.container(border=True):
+                st.markdown("#### ➕ Ajouter un nouveau joueur")
+
+                p_nom = st.text_input("Nom", value="", key="form_p_nom_new")
+                p_prenom = st.text_input("Prénom", value="", key="form_p_prenom_new")
+                p_cat = st.text_input("Catégorie", value="", key="form_p_cat_new")
+                p_poste = st.selectbox("Poste / Position", POSTES_FOOTBALL, index=0, key="form_p_poste_new")
+                p_naiss = st.text_input("Date de Naissance (JJ/MM/AAAA)", value="", key="form_p_naiss_new")
+                p_licence = st.text_input("Numéro de Licence", value="", key="form_p_licence_new")
+                p_photo = st.text_input("URL Photo de profil", value="", key="form_p_photo_new")
+
+                uploaded_p_photo = st.file_uploader("Ou uploader une photo", type=["png", "jpg", "jpeg", "webp"], key="up_p_photo_file_new")
+                if uploaded_p_photo is not None:
+                    try:
+                        with st.spinner("Téléversement..."):
+                            profil_folder_id = manager.get_vestiaire_photo_profil_folder_id()
+                            _, photo_url = manager.upload_uploaded_file_to_drive(uploaded_p_photo, profil_folder_id)
+                            if photo_url:
+                                p_photo = photo_url
+                                st.success("Photo uploadée !")
+                    except Exception as err:
+                        st.error(f"Erreur photo : {err}")
+
+                p_tel = st.text_input("Téléphone", value="", key="form_p_tel_new")
+                p_email = st.text_input("Email", value="", key="form_p_email_new")
+                p_adresse = st.text_input("Adresse", value="", key="form_p_adresse_new")
+
+                col_f_save, col_f_cancel = st.columns(2)
+                with col_f_save:
+                    if st.button("✅ Enregistrer", type="primary", use_container_width=True, key="btn_save_p_new"):
+                        if not p_nom.strip() or not p_prenom.strip():
+                            st.error("Le nom et le prénom sont obligatoires.")
+                        else:
+                            joueurs.insert(0, {
+                                "nom": p_nom.strip().upper(),
+                                "prenom": p_prenom.strip().capitalize(),
+                                "categorie": p_cat.strip(),
+                                "poste": p_poste,
+                                "date_naissance": p_naiss.strip(),
+                                "licence": p_licence.strip(),
+                                "photo_url": p_photo.strip(),
+                                "telephone": p_tel.strip(),
+                                "email": p_email.strip(),
+                                "adresse": p_adresse.strip(),
+                            })
+                            st.session_state.editing_player_idx = None
+
+                with col_f_cancel:
+                    if st.button("Annuler", use_container_width=True, key="btn_cancel_p_new"):
+                        st.session_state.editing_player_idx = None
+
+        # Liste des joueurs
+        if joueurs:
+            for j_idx, j in enumerate(joueurs):
+                col_j_info, col_j_edit, col_j_del = st.columns([4, 1, 1])
+                with col_j_info:
+                    st.markdown(f"**{j_idx + 1}. {j.get('nom', '').upper()} {j.get('prenom', '')}** — *{j.get('poste', 'Poste non défini')}*")
+                with col_j_edit:
+                    if st.button("✏️", key=f"edit_p_{j_idx}", help="Modifier"):
+                        st.session_state.editing_player_idx = j_idx
+                        st.session_state.show_csv_uploader = False
+                        st.session_state.csv_rows_to_import = None
+                with col_j_del:
+                    if st.button("🗑️", key=f"del_p_{j_idx}", help="Supprimer"):
+                        joueurs.pop(j_idx)
+
+                # Le formulaire d'édition s'affiche DÉROULÉ SOUS LE JOUEUR CONCERNÉ
+                if st.session_state.editing_player_idx == j_idx:
+                    with st.container(border=True):
+                        st.markdown(f"#### ✏️ Modifier {j.get('nom', '').upper()} {j.get('prenom', '')}")
+
+                        p_nom = st.text_input("Nom", value=j.get("nom", ""), key=f"form_p_nom_{j_idx}")
+                        p_prenom = st.text_input("Prénom", value=j.get("prenom", ""), key=f"form_p_prenom_{j_idx}")
+                        p_cat = st.text_input("Catégorie", value=j.get("categorie", ""), key=f"form_p_cat_{j_idx}")
+
+                        current_poste = j.get("poste", "")
+                        poste_idx = POSTES_FOOTBALL.index(current_poste) if current_poste in POSTES_FOOTBALL else 0
+                        p_poste = st.selectbox("Poste / Position", POSTES_FOOTBALL, index=poste_idx, key=f"form_p_poste_{j_idx}")
+
+                        p_naiss = st.text_input("Date de Naissance (JJ/MM/AAAA)", value=j.get("date_naissance", ""), key=f"form_p_naiss_{j_idx}")
+                        p_licence = st.text_input("Numéro de Licence", value=j.get("licence", ""), key=f"form_p_licence_{j_idx}")
+                        p_photo = st.text_input("URL Photo de profil", value=j.get("photo_url", ""), key=f"form_p_photo_{j_idx}")
+
+                        uploaded_p_photo = st.file_uploader("Ou uploader une photo", type=["png", "jpg", "jpeg", "webp"], key=f"up_p_photo_file_{j_idx}")
+                        if uploaded_p_photo is not None:
+                            try:
+                                with st.spinner("Téléversement photo..."):
+                                    profil_folder_id = manager.get_vestiaire_photo_profil_folder_id()
+                                    _, photo_url = manager.upload_uploaded_file_to_drive(uploaded_p_photo, profil_folder_id)
+                                    if photo_url:
+                                        p_photo = photo_url
+                                        st.success("Photo uploadée !")
+                            except Exception as err:
+                                st.error(f"Erreur photo : {err}")
+
+                        p_tel = st.text_input("Téléphone", value=j.get("telephone", ""), key=f"form_p_tel_{j_idx}")
+                        p_email = st.text_input("Email", value=j.get("email", ""), key=f"form_p_email_{j_idx}")
+                        p_adresse = st.text_input("Adresse", value=j.get("adresse", ""), key=f"form_p_adresse_{j_idx}")
+
+                        col_f_save, col_f_cancel = st.columns(2)
+                        with col_f_save:
+                            if st.button("✅ Enregistrer", type="primary", use_container_width=True, key=f"btn_save_p_{j_idx}"):
+                                if not p_nom.strip() or not p_prenom.strip():
+                                    st.error("Le nom et le prénom sont obligatoires.")
+                                else:
+                                    joueurs[j_idx] = {
+                                        "nom": p_nom.strip().upper(),
+                                        "prenom": p_prenom.strip().capitalize(),
+                                        "categorie": p_cat.strip(),
+                                        "poste": p_poste,
+                                        "date_naissance": p_naiss.strip(),
+                                        "licence": p_licence.strip(),
+                                        "photo_url": p_photo.strip(),
+                                        "telephone": p_tel.strip(),
+                                        "email": p_email.strip(),
+                                        "adresse": p_adresse.strip(),
+                                    }
+                                    st.session_state.editing_player_idx = None
+
+                        with col_f_cancel:
+                            if st.button("Annuler", use_container_width=True, key=f"btn_cancel_p_{j_idx}"):
+                                st.session_state.editing_player_idx = None
+
+        else:
+            st.info("Aucun joueur enregistré dans cet effectif.")
+
 def render_vestiaire_tab(data, manager):
     """Rendu de l'onglet Vestiaire & Médias adapté à Streamlit."""
     st.subheader("📂 Gestion des Vestiaires & Effectifs")
@@ -196,313 +495,9 @@ def render_vestiaire_tab(data, manager):
     # ==========================================
     # SECTION EFFECTIF / JOUEURS
     # ==========================================
-    with st.expander("⚽ Effectif Complet", expanded=False):
-        col_p_btn1, col_p_btn2 = st.columns([2, 2])
-        with col_p_btn1:
-            if st.button("➕ Ajouter un joueur", type="primary", key="add_player_modal_btn"):
-                st.session_state.editing_player_idx = "new"
-                st.session_state.show_csv_uploader = False
-                st.session_state.csv_rows_to_import = None
-                st.rerun()
-        with col_p_btn2:
-            if st.button("📥 Importer depuis un CSV", type="secondary", key="open_csv_uploader_btn"):
-                st.session_state.show_csv_uploader = not st.session_state.get("show_csv_uploader", False)
-                st.session_state.editing_player_idx = None
-                st.rerun()
+    render_effectif(v_data, manager)
+    joueurs = v_data.setdefault("tous_les_joueurs", [])
 
-        joueurs = v_data.setdefault("tous_les_joueurs", [])
-
-        # --- GESTION DE L'UPLOAD DU FICHIER CSV ---
-        if st.session_state.get("show_csv_uploader", False):
-            with st.container(border=True):
-                st.markdown("#### 📥 Importer des joueurs par fichier CSV")
-                uploaded_csv = st.file_uploader("Sélectionner le fichier CSV FFF", type=["csv"], key="vestiaire_csv_file_input")
-
-                if uploaded_csv is not None:
-                    try:
-                        import csv
-                        import io
-                        
-                        bytes_data = uploaded_csv.getvalue()
-                        sample = bytes_data[:2048].decode("utf-8-sig", errors="ignore")
-                        delimiter = ";" if ";" in sample else ","
-                        
-                        f_text = io.TextIOWrapper(io.BytesIO(bytes_data), encoding="utf-8-sig")
-                        reader = csv.DictReader(f_text, delimiter=delimiter)
-                        rows = list(reader)
-
-                        if not rows:
-                            st.error("Le fichier CSV est vide.")
-                        else:
-                            st.session_state.csv_rows_to_import = rows
-                            st.session_state.show_csv_uploader = False
-                            st.success(f"{len(rows)} lignes lues avec succès ! Veuillez sélectionner les joueurs ci-dessous.")
-                            st.rerun()
-                    except Exception as err:
-                        st.error(f"Erreur lors de la lecture du fichier CSV : {err}")
-
-        # --- INTERFACE DE SÉLECTION DES JOUEURS DU CSV ---
-        if st.session_state.get("csv_rows_to_import"):
-            rows = st.session_state.csv_rows_to_import
-
-            def nettoyer_cat(cat_str):
-                return str(cat_str).split("(")[0].strip()
-
-            categories = sorted({
-                nettoyer_cat(row.get("Sous catégorie_1", ""))
-                for row in rows
-                if row.get("Sous catégorie_1", "").strip()
-            })
-
-            with st.container(border=True):
-                st.markdown("### 📋 Sélection des joueurs à importer")
-                
-                selected_cat_import = st.selectbox("1. Choisir une catégorie :", categories, key="csv_select_cat")
-
-                filtered_indices = [
-                    idx for idx, r in enumerate(rows)
-                    if nettoyer_cat(r.get("Sous catégorie_1", "")) == selected_cat_import
-                ]
-
-                st.markdown(f"**2. Joueurs de la catégorie ({selected_cat_import}) :**")
-
-                if "csv_selected_indices" not in st.session_state:
-                    st.session_state.csv_selected_indices = set()
-
-                col_chk1, col_chk2 = st.columns(2)
-                with col_chk1:
-                    if st.button("Tout cocher pour cette catégorie", key="csv_check_all"):
-                        for idx in filtered_indices:
-                            st.session_state.csv_selected_indices.add(idx)
-                        st.rerun()
-                with col_chk2:
-                    if st.button("Tout décocher", key="csv_uncheck_all"):
-                        for idx in filtered_indices:
-                            st.session_state.csv_selected_indices.discard(idx)
-                        st.rerun()
-
-                for idx in filtered_indices:
-                    row = rows[idx]
-                    nom = row.get("Nom", "").strip().upper()
-                    prenom = row.get("Prénom", "").strip().capitalize()
-                    disp_name = f"{nom} {prenom}" if (nom or prenom) else f"Joueur #{idx+1}"
-                    
-                    is_checked = idx in st.session_state.csv_selected_indices
-                    checked = st.checkbox(disp_name, value=is_checked, key=f"csv_player_chk_{idx}")
-                    
-                    if checked:
-                        st.session_state.csv_selected_indices.add(idx)
-                    else:
-                        st.session_state.csv_selected_indices.discard(idx)
-
-                st.markdown("---")
-                total_selected = len(st.session_state.csv_selected_indices)
-                st.info(f"📊 **{total_selected}** joueur(s) sélectionné(s) au total pour l'importation.")
-
-                col_imp_val, col_imp_can = st.columns(2)
-                with col_imp_val:
-                    if st.button("✅ Valider l'importation des sélectionnés", type="primary", use_container_width=True):
-                        if total_selected == 0:
-                            st.warning("Veuillez cocher au moins un joueur.")
-                        else:
-                            effectif = v_data.setdefault("tous_les_joueurs", [])
-                            nb_importes = 0
-                            nb_mis_a_jour = 0
-
-                            for idx in st.session_state.csv_selected_indices:
-                                row = rows[idx]
-                                nom = row.get("Nom", "").strip().upper()
-                                prenom = row.get("Prénom", "").strip().capitalize()
-                                licence = row.get("Numéro personne_1", "").strip()
-                                tel = row.get("Mobile personnel_1", "").strip()
-                                
-                                tel_clean = "".join(filter(str.isdigit, tel))
-                                if tel_clean:
-                                    if len(tel_clean) == 9 and not tel_clean.startswith("0"):
-                                        tel = "0" + tel_clean
-                                    elif len(tel_clean) == 10 and not tel_clean.startswith("0"):
-                                        tel = "0" + tel_clean[1:]
-                                    else:
-                                        tel = tel_clean
-
-                                voie = row.get("Voie-rue_1", "").strip()
-                                cp = row.get("Code postal_1", "").strip()
-                                ville = row.get("Bureau distributeur_2", "").strip()
-                                adresse_complete = " ".join(filter(None, [voie, cp, ville]))
-
-                                donnees_csv = {
-                                    "nom": nom,
-                                    "prenom": prenom,
-                                    "categorie": nettoyer_cat(row.get("Sous catégorie_1", "")),
-                                    "date_naissance": row.get("Né(e) le_2", "").strip(),
-                                    "licence": licence,
-                                    "telephone": tel,
-                                    "email": row.get("Email principal_1", "").strip(),
-                                    "adresse": adresse_complete,
-                                }
-
-                                joueur_existant = None
-                                for j in effectif:
-                                    lic_ex = str(j.get("licence", "")).strip()
-                                    nom_ex = str(j.get("nom", "")).strip().upper()
-                                    pren_ex = str(j.get("prenom", "")).strip().capitalize()
-                                    if (licence and lic_ex == licence) or (nom_ex == nom and pren_ex == prenom):
-                                        joueur_existant = j
-                                        break
-
-                                if joueur_existant:
-                                    joueur_existant.update({k: v for k, v in donnees_csv.items() if v})
-                                    nb_mis_a_jour += 1
-                                else:
-                                    donnees_csv["poste"] = ""
-                                    donnees_csv["photo_url"] = ""
-                                    effectif.append(donnees_csv)
-                                    nb_importes += 1
-
-                            st.session_state.csv_rows_to_import = None
-                            st.session_state.csv_selected_indices = set()
-                            st.success(f"Importation réussie : {nb_importes} ajouté(s), {nb_mis_a_jour} mis à jour !")
-                            st.rerun()
-
-                with col_imp_can:
-                    if st.button("Annuler l'import", use_container_width=True):
-                        st.session_state.csv_rows_to_import = None
-                        st.session_state.csv_selected_indices = set()
-                        st.rerun()
-
-        # Formulaire si ajout d'un NOUVEAU joueur (affiché en haut de liste)
-        if st.session_state.editing_player_idx == "new":
-            with st.container(border=True):
-                st.markdown("#### ➕ Ajouter un nouveau joueur")
-                
-                p_nom = st.text_input("Nom", value="", key="form_p_nom_new")
-                p_prenom = st.text_input("Prénom", value="", key="form_p_prenom_new")
-                p_cat = st.text_input("Catégorie", value="", key="form_p_cat_new")
-                p_poste = st.selectbox("Poste / Position", POSTES_FOOTBALL, index=0, key="form_p_poste_new")
-                p_naiss = st.text_input("Date de Naissance (JJ/MM/AAAA)", value="", key="form_p_naiss_new")
-                p_licence = st.text_input("Numéro de Licence", value="", key="form_p_licence_new")
-                p_photo = st.text_input("URL Photo de profil", value="", key="form_p_photo_new")
-                
-                uploaded_p_photo = st.file_uploader("Ou uploader une photo", type=["png", "jpg", "jpeg", "webp"], key="up_p_photo_file_new")
-                if uploaded_p_photo is not None:
-                    try:
-                        with st.spinner("Téléversement..."):
-                            profil_folder_id = manager.get_vestiaire_photo_profil_folder_id()
-                            _, photo_url = manager.upload_uploaded_file_to_drive(uploaded_p_photo, profil_folder_id)
-                            if photo_url:
-                                p_photo = photo_url
-                                st.success("Photo uploadée !")
-                    except Exception as err:
-                        st.error(f"Erreur photo : {err}")
-
-                p_tel = st.text_input("Téléphone", value="", key="form_p_tel_new")
-                p_email = st.text_input("Email", value="", key="form_p_email_new")
-                p_adresse = st.text_input("Adresse", value="", key="form_p_adresse_new")
-
-                col_f_save, col_f_cancel = st.columns(2)
-                with col_f_save:
-                    if st.button("✅ Enregistrer", type="primary", use_container_width=True, key="btn_save_p_new"):
-                        if not p_nom.strip() or not p_prenom.strip():
-                            st.error("Le nom et le prénom sont obligatoires.")
-                        else:
-                            joueurs.insert(0, {
-                                "nom": p_nom.strip().upper(),
-                                "prenom": p_prenom.strip().capitalize(),
-                                "categorie": p_cat.strip(),
-                                "poste": p_poste,
-                                "date_naissance": p_naiss.strip(),
-                                "licence": p_licence.strip(),
-                                "photo_url": p_photo.strip(),
-                                "telephone": p_tel.strip(),
-                                "email": p_email.strip(),
-                                "adresse": p_adresse.strip(),
-                            })
-                            st.session_state.editing_player_idx = None
-                            st.rerun()
-
-                with col_f_cancel:
-                    if st.button("Annuler", use_container_width=True, key=f"btn_cancel_p_{j_idx}"):
-                        st.session_state.editing_player_idx = None
-                        st.rerun()
-
-        # Liste des joueurs
-        if joueurs:
-            for j_idx, j in enumerate(joueurs):
-                col_j_info, col_j_edit, col_j_del = st.columns([4, 1, 1])
-                with col_j_info:
-                    st.markdown(f"**{j_idx + 1}. {j.get('nom', '').upper()} {j.get('prenom', '')}** — *{j.get('poste', 'Poste non défini')}*")
-                with col_j_edit:
-                    if st.button("✏️", key=f"edit_p_{j_idx}", help="Modifier"):
-                        st.session_state.editing_player_idx = j_idx
-                        st.session_state.show_csv_uploader = False
-                        st.session_state.csv_rows_to_import = None
-                        st.rerun()
-                with col_j_del:
-                    if st.button("🗑️", key=f"del_p_{j_idx}", help="Supprimer"):
-                        joueurs.pop(j_idx)
-                        st.rerun()
-
-                # Le formulaire d'édition s'affiche DÉROULÉ SOUS LE JOUEUR CONCERNÉ
-                if st.session_state.editing_player_idx == j_idx:
-                    with st.container(border=True):
-                        st.markdown(f"#### ✏️ Modifier {j.get('nom', '').upper()} {j.get('prenom', '')}")
-
-                        p_nom = st.text_input("Nom", value=j.get("nom", ""), key=f"form_p_nom_{j_idx}")
-                        p_prenom = st.text_input("Prénom", value=j.get("prenom", ""), key=f"form_p_prenom_{j_idx}")
-                        p_cat = st.text_input("Catégorie", value=j.get("categorie", ""), key=f"form_p_cat_{j_idx}")
-                        
-                        current_poste = j.get("poste", "")
-                        poste_idx = POSTES_FOOTBALL.index(current_poste) if current_poste in POSTES_FOOTBALL else 0
-                        p_poste = st.selectbox("Poste / Position", POSTES_FOOTBALL, index=poste_idx, key=f"form_p_poste_{j_idx}")
-
-                        p_naiss = st.text_input("Date de Naissance (JJ/MM/AAAA)", value=j.get("date_naissance", ""), key=f"form_p_naiss_{j_idx}")
-                        p_licence = st.text_input("Numéro de Licence", value=j.get("licence", ""), key=f"form_p_licence_{j_idx}")
-                        p_photo = st.text_input("URL Photo de profil", value=j.get("photo_url", ""), key=f"form_p_photo_{j_idx}")
-                        
-                        uploaded_p_photo = st.file_uploader("Ou uploader une photo", type=["png", "jpg", "jpeg", "webp"], key=f"up_p_photo_file_{j_idx}")
-                        if uploaded_p_photo is not None:
-                            try:
-                                with st.spinner("Téléversement photo..."):
-                                    profil_folder_id = manager.get_vestiaire_photo_profil_folder_id()
-                                    _, photo_url = manager.upload_uploaded_file_to_drive(uploaded_p_photo, profil_folder_id)
-                                    if photo_url:
-                                        p_photo = photo_url
-                                        st.success("Photo uploadée !")
-                            except Exception as err:
-                                st.error(f"Erreur photo : {err}")
-
-                        p_tel = st.text_input("Téléphone", value=j.get("telephone", ""), key=f"form_p_tel_{j_idx}")
-                        p_email = st.text_input("Email", value=j.get("email", ""), key=f"form_p_email_{j_idx}")
-                        p_adresse = st.text_input("Adresse", value=j.get("adresse", ""), key=f"form_p_adresse_{j_idx}")
-
-                        col_f_save, col_f_cancel = st.columns(2)
-                        with col_f_save:
-                            if st.button("✅ Enregistrer", type="primary", use_container_width=True, key=f"btn_save_p_{j_idx}"):
-                                if not p_nom.strip() or not p_prenom.strip():
-                                    st.error("Le nom et le prénom sont obligatoires.")
-                                else:
-                                    joueurs[j_idx] = {
-                                        "nom": p_nom.strip().upper(),
-                                        "prenom": p_prenom.strip().capitalize(),
-                                        "categorie": p_cat.strip(),
-                                        "poste": p_poste,
-                                        "date_naissance": p_naiss.strip(),
-                                        "licence": p_licence.strip(),
-                                        "photo_url": p_photo.strip(),
-                                        "telephone": p_tel.strip(),
-                                        "email": p_email.strip(),
-                                        "adresse": p_adresse.strip(),
-                                    }
-                                    st.session_state.editing_player_idx = None
-                                    st.rerun()
-
-                        with col_f_cancel:
-                            if st.button("Annuler", use_container_width=True, key=f"btn_cancel_p_{j_idx}"):
-                                st.session_state.editing_player_idx = None
-                                st.rerun()
-
-        else:
-            st.info("Aucun joueur enregistré dans cet effectif.")
     # ==========================================
     # SECTION GROUPES (Convocations)
     # ==========================================
