@@ -35,7 +35,7 @@ def render_about_tab(data, config_manager):
     about_state = st.session_state.about_data_state
 
     # --- SECTION VERSIONS DE LA CIBLE ---
-    with st.expander("📱 Versions Cibles", expanded=True):
+    with st.expander("📱 Versions Cibles", expanded=False):
         col1, col2 = st.columns(2)
         with col1:
             about_state["version_android"] = st.text_input(
@@ -51,7 +51,7 @@ def render_about_tab(data, config_manager):
             )
 
     # --- SECTION TEXTES D'INTRODUCTION ---
-    with st.expander("📝 Textes d'Introduction", expanded=True):
+    with st.expander("📝 Textes d'Introduction", expanded=False):
         about_state["intro_text"] = st.text_area(
             "Français", 
             value=about_state["intro_text"],
@@ -66,7 +66,7 @@ def render_about_tab(data, config_manager):
         )
 
     # --- SECTION PARTENAIRE & LOGO ---
-    with st.expander("🤝 Partenariat & Logo", expanded=True):
+    with st.expander("🤝 Partenariat & Logo", expanded=False):
         col_url, col_btn = st.columns([4, 1])
         with col_url:
             about_state["logo_partenaire"] = st.text_input(
@@ -104,7 +104,7 @@ def render_about_tab(data, config_manager):
         )
 
     # --- SECTION DÉTAILS DYNAMIQUES (Tableau du bas) ---
-    with st.expander("📊 Détails Techniques (Bas de page)", expanded=True):
+    with st.expander("📊 Détails Techniques (Bas de page)", expanded=False):
         st.markdown("Gérez les lignes d'information affichées en bas de page de l'application.")
 
         details_to_remove = []
