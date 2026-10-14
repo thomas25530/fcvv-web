@@ -119,76 +119,77 @@ def render_boutique_tab(data, config_manager):
 
             st.markdown("---")
 
-            # Liste des produits de la catégorie
+            # Liste des produits de la catégorie encapsulés dans des expanders repliés par défaut
             for real_idx, p in group_items:
-                col_nom, col_prix, col_img, col_actions = st.columns([3, 1, 4, 2])
+                article_title = p['nom'].strip() or f"Produit #{real_idx + 1}"
+                
+                with st.expander(f"📦 {article_title}", expanded=False):
+                    col_nom, col_prix, col_img, col_actions = st.columns([3, 1, 4, 2])
 
-                with col_nom:
-                    p['nom'] = st.text_input(
-                        "Nom", value=p['nom'], 
-                        key=f"boutique_nom_{real_idx}",
-                        placeholder="Nom du produit"
-                    )
-                with col_prix:
-                    p['prix'] = st.text_input(
-                        "Prix (€)", value=p['prix'], 
-                        key=f"boutique_prix_{real_idx}"
-                    )
-                with col_img:
-                    sub_col_txt, sub_col_up = st.columns([4, 1])
-                    with sub_col_txt:
-                        p['image_url'] = st.text_input(
-                            "URL Image", value=p['image_url'], 
-                            key=f"boutique_img_{real_idx}",
-                            placeholder="https://..."
+                    with col_nom:
+                        p['nom'] = st.text_input(
+                            "Nom", value=p['nom'], 
+                            key=f"boutique_nom_{real_idx}",
+                            placeholder="Nom du produit"
                         )
-                    with sub_col_up:
-                        uploaded_file = st.file_uploader(
-                            "📁", type=["png", "jpg", "jpeg", "webp"], 
-                            key=f"up_boutique_img_{real_idx}", 
-                            label_visibility="collapsed"
+                    with col_prix:
+                        p['prix'] = st.text_input(
+                            "Prix (€)", value=p['prix'], 
+                            key=f"boutique_prix_{real_idx}"
                         )
-                        if uploaded_file is not None:
-                            try:
-                                with st.spinner("Upload..."):
-                                    boutique_folder_id = config_manager.get_boutique_folder_id()
-                                    _, file_url = config_manager.upload_uploaded_file_to_drive(
-                                        uploaded_file, boutique_folder_id
-                                    )
-                                    if file_url:
-                                        p['image_url'] = file_url
-                                        st.success("OK !")
-                                        st.rerun()
-                            except Exception as e:
-                                st.error(f"Erreur d'upload : {e}")
+                    with col_img:
+                        sub_col_txt, sub_col_up = st.columns([4, 1])
+                        with sub_col_txt:
+                            p['image_url'] = st.text_input(
+                                "URL Image", value=p['image_url'], 
+                                key=f"boutique_img_{real_idx}",
+                                placeholder="https://..."
+                            )
+                        with sub_col_up:
+                            uploaded_file = st.file_uploader(
+                                "📁", type=["png", "jpg", "jpeg", "webp"], 
+                                key=f"up_boutique_img_{real_idx}", 
+                                label_visibility="collapsed"
+                            )
+                            if uploaded_file is not None:
+                                try:
+                                    with st.spinner("Upload..."):
+                                        boutique_folder_id = config_manager.get_boutique_folder_id()
+                                        _, file_url = config_manager.upload_uploaded_file_to_drive(
+                                            uploaded_file, boutique_folder_id
+                                        )
+                                        if file_url:
+                                            p['image_url'] = file_url
+                                            st.success("OK !")
+                                            st.rerun()
+                                except Exception as e:
+                                    st.error(f"Erreur d'upload : {e}")
 
-                with col_actions:
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    ac_col1, _, ac_col3 = st.columns(3)
-                    with ac_col1:
-                        if st.button("👁", key=f"preview_boutique_{real_idx}", help="Aperçu"):
-                            st.session_state.preview_boutique_product = p
-                            st.rerun()
-                    with ac_col3:
-                        if st.button("❌", key=f"del_boutique_{real_idx}", help="Supprimer"):
-                            produits_to_remove.append(real_idx)
+                    with col_actions:
+                        st.markdown("<br>", unsafe_allow_html=True)
+                        ac_col1, _, ac_col3 = st.columns(3)
+                        with ac_col1:
+                            if st.button("👁", key=f"preview_boutique_{real_idx}", help="Aperçu"):
+                                st.session_state.preview_boutique_product = p
+                                st.rerun()
+                        with ac_col3:
+                            if st.button("❌", key=f"del_boutique_{real_idx}", help="Supprimer"):
+                                produits_to_remove.append(real_idx)
 
-                # Modification du Type et Description détaillée sous chaque produit
-                col_type_edit, col_desc_edit = st.columns([2, 5])
-                with col_type_edit:
-                    p['type'] = st.text_input(
-                        "Type / Catégorie", value=p['type'], 
-                        key=f"boutique_type_edit_{real_idx}"
-                    )
-                with col_desc_edit:
-                    p['description'] = st.text_area(
-                        "Description (supporte [b], [i], [color=#...])", 
-                        value=p['description'], 
-                        height=80, 
-                        key=f"boutique_desc_{real_idx}"
-                    )
-
-                st.markdown("---")
+                    # Modification du Type et Description détaillée sous chaque produit
+                    col_type_edit, col_desc_edit = st.columns([2, 5])
+                    with col_type_edit:
+                        p['type'] = st.text_input(
+                            "Type / Catégorie", value=p['type'], 
+                            key=f"boutique_type_edit_{real_idx}"
+                        )
+                    with col_desc_edit:
+                        p['description'] = st.text_area(
+                            "Description (supporte [b], [i], [color=#...])", 
+                            value=p['description'], 
+                            height=80, 
+                            key=f"boutique_desc_{real_idx}"
+                        )
 
     # Suppression effective
     if produits_to_remove:
