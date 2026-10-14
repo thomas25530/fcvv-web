@@ -152,11 +152,11 @@ def get_config_manager():
 
 manager = get_config_manager()
 
-# --- CHARGEMENT DES DONNÉES EN SESSION ---
+# --- CHARGEMENT DES DONNÉES EN SESSION (UTILISE LA LECTURE PUBLIQUE SANS TOKEN) ---
 if "config_data" not in st.session_state:
     with st.spinner("Chargement des configurations depuis Google Drive..."):
         try:
-            st.session_state.config_data = manager.load_config()
+            st.session_state.config_data = manager.load_config_public()
             st.session_state.load_error = None
         except Exception as e:
             st.session_state.config_data = {"appli": {}}
@@ -208,7 +208,7 @@ def verify_login(selection, pwd):
             else:
                 st.error("Mot de passe incorrect pour cette catégorie.")
 
-# Si non connecté, affichage de l'écran de login ET de la maintenance du token en secours
+# Si non connecté, affichage de l'écran de login
 if st.session_state.auth_profile is None:
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -225,25 +225,6 @@ if st.session_state.auth_profile is None:
         
         if st.button("Se connecter", type="primary", use_container_width=True):
             verify_login(selected_profile, password_input)
-            
-        # --- SECOURS : MAINTENANCE TOKEN DIRECTEMENT SUR LE LOGIN EN CAS D'ERREUR ---
-        if st.session_state.load_error:
-            st.divider()
-            st.error(f"⚠️ Problème de connexion Google Drive : {st.session_state.load_error}")
-            with st.expander("🔑 Réparer l'accès (Mettre à jour le token.json)", expanded=True):
-                st.write("Si votre jeton a expiré, déposez votre nouveau fichier `token.json` ci-dessous :")
-                uploaded_token_login = st.file_uploader("Importer token.json de secours", type=["json"], key="token_login_uploader")
-                if uploaded_token_login is not None:
-                    if st.button("Appliquer et synchroniser ce nouveau token"):
-                        try:
-                            token_data = json.load(uploaded_token_login)
-                            manager.authenticate_with_token_info(token_data)
-                            st.session_state.config_data = manager.load_config()
-                            st.session_state.load_error = None
-                            st.success("Jeton mis à jour avec succès ! Rechargement...")
-                            st.rerun()
-                        except Exception as token_err:
-                            st.error(f"Erreur : {token_err}")
 
         st.stop()
 
@@ -251,14 +232,6 @@ if st.session_state.auth_profile is None:
 profile = st.session_state.auth_profile
 allowed_tabs = profile.get("allowed_tabs")
 is_super_admin = (profile.get("type") == "super_admin")
-
-# Gestion des alertes de connexion au Drive
-if st.session_state.load_error:
-    st.warning(f"⚠️ **Attention au chargement** : {st.session_state.load_error}. Utilisation des données de secours.")
-elif getattr(manager, "is_offline", False):
-    st.warning("⚠️ **Mode Hors-Ligne** : Impossible de joindre Google Drive. Utilisation du cache local.")
-else:
-    st.success("🟢 Connecté à Google Drive avec succès.")
 
 if "appli" not in data:
     data["appli"] = {}
@@ -318,7 +291,7 @@ if is_super_admin:
         st.divider()
         
         st.markdown("🔑 **Maintenance Google Drive (Jeton d'authentification)**")
-        st.write("Si le jeton a expiré ou pose problème, déposez votre nouveau fichier `token.json` ci-dessous :")
+        st.write("Si l'enregistrement ou l'upload d'images échoue en raison d'un jeton expiré, déposez votre nouveau fichier `token.json` ci-dessous :")
         
         uploaded_token = st.file_uploader("Importer un nouveau token.json", type=["json"], key="token_uploader")
         if uploaded_token is not None:
@@ -326,7 +299,7 @@ if is_super_admin:
                 try:
                     token_data = json.load(uploaded_token)
                     manager.authenticate_with_token_info(token_data)
-                    st.session_state.config_data = manager.load_config()
+                    st.session_state.config_data = manager.load_config_public()
                     st.session_state.load_error = None
                     st.success("Jeton mis à jour et enregistré avec succès ! Reconnexion établie.")
                     st.rerun()
