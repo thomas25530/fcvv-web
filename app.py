@@ -11,6 +11,7 @@ from tabs.tab_partenaires import render_partenaires_tab
 from tabs.tab_boutique import render_boutique_tab
 
 # ID de votre fichier YAML principal sur Google Drive
+
 FILE_ID = "161ngxPQz66QumHjG_us6qqyAtA0GPX2x"
 
 # 1. CONFIGURATION DE LA PAGE
