@@ -19,6 +19,7 @@ from tabs.tab_agenda_resultats import render_agenda_resultats_tab
 # ID de votre fichier YAML principal sur Google Drive
 FILE_ID = "161ngxPQz66QumHjG_us6qqyAtA0GPX2x"
 
+
 # Chargement sécurisé du logo pour l'icône de l'application / favicon
 try:
     logo_favicon = Image.open("assets/logo.png")
