@@ -97,7 +97,7 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    /* 6. COMPACTAGE ET NETTOYAGE DU FILE UPLOADER */
+    /* 6. COMPACTAGE ET NETTOYAGE DU FILE UPLOADER (Corrigé) */
     div[data-testid="stFileUploader"] {
         width: fit-content !important;
         display: inline-block !important;
@@ -126,11 +126,9 @@ st.markdown("""
         background-color: #334155 !important;
     }
 
-    /* CIBLAGE MIS À JOUR : Masquer définitivement la ligne "200MB per file..." et les instructions */
+    /* Masquer uniquement le texte des instructions et la taille (200MB) sans toucher au bouton */
     [data-testid="stFileUploaderInstructions"],
-    div[data-testid="stFileUploader"] small,
-    div[data-testid="stFileUploader"] span,
-    div[data-testid="stFileUploader"] div[data-baseweb="file-uploader"] + div {
+    div[data-testid="stFileUploader"] small {
         display: none !important;
     }
 </style>
