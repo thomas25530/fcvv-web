@@ -51,7 +51,7 @@ def render_notification_tab(data, config_manager, auth_profile=None):
     if is_super:
         # --- PARTIE 1 : Notification Globale (TournoiVercel) ---
         with st.container(border=True):
-            st.markdown("### 📢 1. Notification Générale (Canal : TournoiVercel)")
+            st.markdown("### 📢 1. Notification Générale")
             st.caption("Cette notification sera transmise à TOUTES les applications connectées.")
 
             gen_title = st.text_input("Titre de la notification (Générale)", key="gen_notif_title")
