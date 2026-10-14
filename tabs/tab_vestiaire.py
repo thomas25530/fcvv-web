@@ -199,6 +199,9 @@ def render_vestiaire_tab(data, manager):
     # ==========================================
     # SECTION EFFECTIF / JOUEURS
     # ==========================================
+    # ==========================================
+    # SECTION EFFECTIF / JOUEURS
+    # ==========================================
     with st.expander("⚽ Effectif Complet", expanded=True):
         col_p_btn1, col_p_btn2 = st.columns([2, 2])
         with col_p_btn1:
@@ -208,8 +211,63 @@ def render_vestiaire_tab(data, manager):
 
         joueurs = v_data.setdefault("tous_les_joueurs", [])
 
+        # Formulaire si ajout d'un NOUVEAU joueur (affiché en haut de liste)
+        if st.session_state.editing_player_idx == "new":
+            with st.container(border=True):
+                st.markdown("#### ➕ Ajouter un nouveau joueur")
+                
+                p_nom = st.text_input("Nom", value="", key="form_p_nom_new")
+                p_prenom = st.text_input("Prénom", value="", key="form_p_prenom_new")
+                p_cat = st.text_input("Catégorie", value="", key="form_p_cat_new")
+                p_poste = st.selectbox("Poste / Position", POSTES_FOOTBALL, index=0, key="form_p_poste_new")
+                p_naiss = st.text_input("Date de Naissance (JJ/MM/AAAA)", value="", key="form_p_naiss_new")
+                p_licence = st.text_input("Numéro de Licence", value="", key="form_p_licence_new")
+                p_photo = st.text_input("URL Photo de profil", value="", key="form_p_photo_new")
+                
+                uploaded_p_photo = st.file_uploader("Ou uploader une photo", type=["png", "jpg", "jpeg", "webp"], key="up_p_photo_file_new")
+                if uploaded_p_photo is not None:
+                    try:
+                        with st.spinner("Téléversement..."):
+                            profil_folder_id = manager.get_vestiaire_photo_profil_folder_id()
+                            _, photo_url = manager.upload_uploaded_file_to_drive(uploaded_p_photo, profil_folder_id)
+                            if photo_url:
+                                p_photo = photo_url
+                                st.success("Photo uploadée !")
+                    except Exception as err:
+                        st.error(f"Erreur photo : {err}")
+
+                p_tel = st.text_input("Téléphone", value="", key="form_p_tel_new")
+                p_email = st.text_input("Email", value="", key="form_p_email_new")
+                p_adresse = st.text_input("Adresse", value="", key="form_p_adresse_new")
+
+                col_f_save, col_f_cancel = st.columns(2)
+                with col_f_save:
+                    if st.button("✅ Enregistrer", type="primary", use_container_width=True, key="btn_save_p_new"):
+                        if not p_nom.strip() or not p_prenom.strip():
+                            st.error("Le nom et le prénom sont obligatoires.")
+                        else:
+                            joueurs.insert(0, {
+                                "nom": p_nom.strip().upper(),
+                                "prenom": p_prenom.strip().capitalize(),
+                                "categorie": p_cat.strip(),
+                                "poste": p_poste,
+                                "date_naissance": p_naiss.strip(),
+                                "licence": p_licence.strip(),
+                                "photo_url": p_photo.strip(),
+                                "telephone": p_tel.strip(),
+                                "email": p_email.strip(),
+                                "adresse": p_adresse.strip(),
+                            })
+                            st.session_state.editing_player_idx = None
+                            st.rerun()
+
+                with col_f_cancel:
+                    if st.button("Annuler", use_container_width=True, key="btn_cancel_p_new"):
+                        st.session_state.editing_player_idx = None
+                        st.rerun()
+
+        # Liste des joueurs
         if joueurs:
-            # Affichage en tableau résumé avec Modifier et Supprimer côte à côte
             for j_idx, j in enumerate(joueurs):
                 col_j_info, col_j_edit, col_j_del = st.columns([4, 1, 1])
                 with col_j_info:
@@ -222,80 +280,68 @@ def render_vestiaire_tab(data, manager):
                     if st.button("🗑️", key=f"del_p_{j_idx}", help="Supprimer"):
                         joueurs.pop(j_idx)
                         st.rerun()
+
+                # Le formulaire d'édition s'affiche DÉROULÉ SOUS LE JOUEUR CONCERNÉ
+                if st.session_state.editing_player_idx == j_idx:
+                    with st.container(border=True):
+                        st.markdown(f"#### ✏️ Modifier {j.get('nom', '').upper()} {j.get('prenom', '')}")
+
+                        p_nom = st.text_input("Nom", value=j.get("nom", ""), key=f"form_p_nom_{j_idx}")
+                        p_prenom = st.text_input("Prénom", value=j.get("prenom", ""), key=f"form_p_prenom_{j_idx}")
+                        p_cat = st.text_input("Catégorie", value=j.get("categorie", ""), key=f"form_p_cat_{j_idx}")
+                        
+                        current_poste = j.get("poste", "")
+                        poste_idx = POSTES_FOOTBALL.index(current_poste) if current_poste in POSTES_FOOTBALL else 0
+                        p_poste = st.selectbox("Poste / Position", POSTES_FOOTBALL, index=poste_idx, key=f"form_p_poste_{j_idx}")
+
+                        p_naiss = st.text_input("Date de Naissance (JJ/MM/AAAA)", value=j.get("date_naissance", ""), key=f"form_p_naiss_{j_idx}")
+                        p_licence = st.text_input("Numéro de Licence", value=j.get("licence", ""), key=f"form_p_licence_{j_idx}")
+                        p_photo = st.text_input("URL Photo de profil", value=j.get("photo_url", ""), key=f"form_p_photo_{j_idx}")
+                        
+                        uploaded_p_photo = st.file_uploader("Ou uploader une photo", type=["png", "jpg", "jpeg", "webp"], key=f"up_p_photo_file_{j_idx}")
+                        if uploaded_p_photo is not None:
+                            try:
+                                with st.spinner("Téléversement photo..."):
+                                    profil_folder_id = manager.get_vestiaire_photo_profil_folder_id()
+                                    _, photo_url = manager.upload_uploaded_file_to_drive(uploaded_p_photo, profil_folder_id)
+                                    if photo_url:
+                                        p_photo = photo_url
+                                        st.success("Photo uploadée !")
+                            except Exception as err:
+                                st.error(f"Erreur photo : {err}")
+
+                        p_tel = st.text_input("Téléphone", value=j.get("telephone", ""), key=f"form_p_tel_{j_idx}")
+                        p_email = st.text_input("Email", value=j.get("email", ""), key=f"form_p_email_{j_idx}")
+                        p_adresse = st.text_input("Adresse", value=j.get("adresse", ""), key=f"form_p_adresse_{j_idx}")
+
+                        col_f_save, col_f_cancel = st.columns(2)
+                        with col_f_save:
+                            if st.button("✅ Enregistrer", type="primary", use_container_width=True, key=f"btn_save_p_{j_idx}"):
+                                if not p_nom.strip() or not p_prenom.strip():
+                                    st.error("Le nom et le prénom sont obligatoires.")
+                                else:
+                                    joueurs[j_idx] = {
+                                        "nom": p_nom.strip().upper(),
+                                        "prenom": p_prenom.strip().capitalize(),
+                                        "categorie": p_cat.strip(),
+                                        "poste": p_poste,
+                                        "date_naissance": p_naiss.strip(),
+                                        "licence": p_licence.strip(),
+                                        "photo_url": p_photo.strip(),
+                                        "telephone": p_tel.strip(),
+                                        "email": p_email.strip(),
+                                        "adresse": p_adresse.strip(),
+                                    }
+                                    st.session_state.editing_player_idx = None
+                                    st.rerun()
+
+                        with col_f_cancel:
+                            if st.button("Annuler", use_container_width=True, key=f"btn_cancel_p_{j_idx}"):
+                                st.session_state.editing_player_idx = None
+                                st.rerun()
+
         else:
             st.info("Aucun joueur enregistré dans cet effectif.")
-
-        # Formulaire d'ajout / modification de joueur
-        if st.session_state.editing_player_idx is not None:
-            st.markdown("---")
-            is_new = st.session_state.editing_player_idx == "new"
-            titre_form = "➕ Ajouter un nouveau joueur" if is_new else "✏️ Modifier le joueur"
-            st.markdown(f"#### {titre_form}")
-
-            current_p = {} if is_new else joueurs[st.session_state.editing_player_idx]
-
-            p_nom = st.text_input("Nom", value=current_p.get("nom", ""), key="form_p_nom")
-            p_prenom = st.text_input("Prénom", value=current_p.get("prenom", ""), key="form_p_prenom")
-            p_cat = st.text_input("Catégorie", value=current_p.get("categorie", ""), key="form_p_cat")
-            
-            # Poste avec selectbox
-            current_poste = current_p.get("poste", "")
-            poste_idx = POSTES_FOOTBALL.index(current_poste) if current_poste in POSTES_FOOTBALL else 0
-            p_poste = st.selectbox("Poste / Position", POSTES_FOOTBALL, index=poste_idx, key="form_p_poste")
-
-            p_naiss = st.text_input("Date de Naissance (JJ/MM/AAAA)", value=current_p.get("date_naissance", ""), key="form_p_naiss")
-            p_licence = st.text_input("Numéro de Licence", value=current_p.get("licence", ""), key="form_p_licence")
-            p_photo = st.text_input("URL Photo de profil", value=current_p.get("photo_url", ""), key="form_p_photo")
-            
-            # Upload photo direct vers Drive
-            uploaded_p_photo = st.file_uploader("Ou uploader une photo de profil", type=["png", "jpg", "jpeg", "webp"], key="up_p_photo_file")
-            if uploaded_p_photo is not None:
-                try:
-                    with st.spinner("Téléversement photo..."):
-                        profil_folder_id = manager.get_vestiaire_photo_profil_folder_id()
-                        _, photo_url = manager.upload_uploaded_file_to_drive(uploaded_p_photo, profil_folder_id)
-                        if photo_url:
-                            p_photo = photo_url
-                            st.success("Photo uploadée !")
-                except Exception as err:
-                    st.error(f"Erreur upload photo : {err}")
-
-            p_tel = st.text_input("Téléphone", value=current_p.get("telephone", ""), key="form_p_tel")
-            p_email = st.text_input("Email", value=current_p.get("email", ""), key="form_p_email")
-            p_adresse = st.text_input("Adresse", value=current_p.get("adresse", ""), key="form_p_adresse")
-
-            col_f_save, col_f_cancel = st.columns(2)
-            with col_f_save:
-                if st.button("✅ Enregistrer", type="primary", use_container_width=True, key="btn_save_player"):
-                    if not p_nom.strip() or not p_prenom.strip():
-                        st.error("Le nom et le prénom sont obligatoires.")
-                    else:
-                        updated_player = {
-                            "nom": p_nom.strip().upper(),
-                            "prenom": p_prenom.strip().capitalize(),
-                            "categorie": p_cat.strip(),
-                            "poste": p_poste,
-                            "date_naissance": p_naiss.strip(),
-                            "licence": p_licence.strip(),
-                            "photo_url": p_photo.strip(),
-                            "telephone": p_tel.strip(),
-                            "email": p_email.strip(),
-                            "adresse": p_adresse.strip(),
-                        }
-                        if is_new:
-                            joueurs.append(updated_player)
-                        else:
-                            joueurs[st.session_state.editing_player_idx] = updated_player
-                        
-                        st.session_state.editing_player_idx = None
-                        st.success("Joueur enregistré avec succès !")
-                        st.rerun()
-
-            with col_f_cancel:
-                if st.button("Annuler", use_container_width=True, key="btn_cancel_player"):
-                    st.session_state.editing_player_idx = None
-                    st.rerun()
-
     # ==========================================
     # SECTION GROUPES (Convocations)
     # ==========================================
