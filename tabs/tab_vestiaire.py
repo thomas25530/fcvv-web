@@ -32,6 +32,7 @@ def render_effectif(v_data, manager):
                 st.session_state.editing_player_idx = "new"
                 st.session_state.show_csv_uploader = False
                 st.session_state.csv_rows_to_import = None
+                st.rerun()
         with col_p_btn2:
             if st.button("📥 Importer depuis un CSV", type="secondary", key="open_csv_uploader_btn"):
                 st.session_state.show_csv_uploader = not st.session_state.get("show_csv_uploader", False)
@@ -240,10 +241,12 @@ def render_effectif(v_data, manager):
                                 "adresse": p_adresse.strip(),
                             })
                             st.session_state.editing_player_idx = None
+                            st.rerun()
 
                 with col_f_cancel:
-                    if st.button("Annuler", use_container_width=True, key="btn_cancel_p_new"):
+                    if st.button("Annuler", use_container_width=True, key=f"btn_cancel_p_{j_idx}"):
                         st.session_state.editing_player_idx = None
+                        st.rerun()
 
         # Liste des joueurs
         if joueurs:
@@ -256,6 +259,7 @@ def render_effectif(v_data, manager):
                         st.session_state.editing_player_idx = j_idx
                         st.session_state.show_csv_uploader = False
                         st.session_state.csv_rows_to_import = None
+                        st.rerun()
                 with col_j_del:
                     if st.button("🗑️", key=f"del_p_{j_idx}", help="Supprimer"):
                         joueurs.pop(j_idx)
@@ -312,6 +316,7 @@ def render_effectif(v_data, manager):
                                         "adresse": p_adresse.strip(),
                                     }
                                     st.session_state.editing_player_idx = None
+                                    st.rerun()
 
                         with col_f_cancel:
                             if st.button(
