@@ -49,9 +49,8 @@ def render_notification_tab(data, config_manager, auth_profile=None):
     # CAS 1 : SUPER ADMIN (Voit tout)
     # ==========================================
     if is_super:
-        # --- PARTIE 1 : Notification Globale (TournoiVercel) ---
-        with st.container(border=True):
-            st.markdown("### 📢 1. Notification Générale")
+        # --- PARTIE 1 : Notification Globale (TournoiVercel) repliée par défaut ---
+        with st.expander("📢 1. Notification Générale (Toutes les applis)", expanded=False):
             st.caption("Cette notification sera transmise à TOUTES les applications connectées.")
 
             gen_title = st.text_input("Titre de la notification (Générale)", key="gen_notif_title")
@@ -68,12 +67,8 @@ def render_notification_tab(data, config_manager, auth_profile=None):
                     else:
                         st.error(message)
 
-        st.divider()
-
-        # --- PARTIE 2 : Notification par Catégorie Spécifique (Sans mdp pour le Super Admin) ---
-        with st.container(border=True):
-            st.markdown("### 🎯 2. Notification par Catégorie Spécifique")
-
+        # --- PARTIE 2 : Notification par Catégorie Spécifique repliée par défaut ---
+        with st.expander("🎯 2. Notification par Catégorie Spécifique", expanded=False):
             vestiaires = data.get("appli", {}).get("vestiaire", [])
             categories_dispo = [
                 item.get("categorie")
@@ -108,8 +103,7 @@ def render_notification_tab(data, config_manager, auth_profile=None):
         vestiaire_data = auth_profile.get("vestiaire_data", {})
         current_categorie = vestiaire_data.get("categorie", "Inconnue")
 
-        with st.container(border=True):
-            st.markdown(f"### 🎯 Envoi de Notification - Catégorie : {current_categorie}")
+        with st.expander(f"🎯 Envoi de Notification - Catégorie : {current_categorie}", expanded=False):
             st.caption(f"Vous êtes connecté pour la catégorie [{current_categorie}]. Vous pouvez envoyer des notifications uniquement à vos membres.")
 
             cat_title = st.text_input("Titre de la notification :", key="notif_cat_title_restreint")
