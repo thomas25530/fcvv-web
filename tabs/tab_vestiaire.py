@@ -244,7 +244,7 @@ def render_effectif(v_data, manager):
                             st.rerun()
 
                 with col_f_cancel:
-                    if st.button("Annuler", use_container_width=True, key=f"btn_cancel_p_{j_idx}"):
+                    if st.button("Annuler", use_container_width=True, key="btn_cancel_new_player"):
                         st.session_state.editing_player_idx = None
                         st.rerun()
 
