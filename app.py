@@ -237,9 +237,17 @@ if "appli" not in data:
     data["appli"] = {}
 
 # --- EN-TÊTE & CONFIGURATION DE LA SAISON ---
-col_title, col_logout = st.columns([5, 1])
+col_logo, col_title, col_logout = st.columns([0.6, 4.4, 1])
+
+with col_logo:
+    try:
+        st.image("assets/logo.png", width=60)
+    except Exception:
+        st.write("⚽")  # Fallback si le logo n'est pas trouvé
+
 with col_title:
-    st.title("⚽ FC VALDAHON VERCEL - Administration")
+    st.title("FC VALDAHON VERCEL - Administration")
+
 with col_logout:
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("🚪 Déconnexion", type="secondary"):
