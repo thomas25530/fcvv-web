@@ -24,6 +24,7 @@ def get_config_manager():
 manager = get_config_manager()
 
 # --- CHARGEMENT DES DONNÉES EN SESSION (Évite les appels réseau SSL redondants à chaque clic) ---
+
 if "config_data" not in st.session_state:
     with st.spinner("Chargement des configurations depuis Google Drive..."):
         try:
