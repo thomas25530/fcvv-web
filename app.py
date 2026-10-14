@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import hashlib
+from PIL import Image
 import streamlit as st
 from config_manager import ConfigManager
 
@@ -11,12 +12,19 @@ from tabs.tab_partenaires import render_partenaires_tab
 from tabs.tab_boutique import render_boutique_tab
 
 # ID de votre fichier YAML principal sur Google Drive
-
 FILE_ID = "161ngxPQz66QumHjG_us6qqyAtA0GPX2x"
 
-# 1. CONFIGURATION DE LA PAGE
+# Chargement sécurisé du logo pour l'icône de l'application / favicon
+try:
+    logo_favicon = Image.open("assets/logo.png")
+except Exception:
+    logo_favicon = "⚽"  # Fallback par défaut si le logo n'est pas trouvé
+
+# 1. CONFIGURATION DE LA PAGE (Nom et Icône pour PWA / Navigateur)
 st.set_page_config(
-    page_title="FC VALDAHON VERCEL - Administration", page_icon="⚽", layout="wide"
+    page_title="FCVV Admin", 
+    page_icon=logo_favicon, 
+    layout="wide"
 )
 
 st.markdown("""
