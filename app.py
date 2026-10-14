@@ -97,7 +97,7 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    /* 6. COMPACTAGE ET NETTOYAGE DU FILE UPLOADER (Corrigé) */
+    /* 6. COMPACTAGE ET NETTOYAGE TOTAL DU FILE UPLOADER */
     div[data-testid="stFileUploader"] {
         width: fit-content !important;
         display: inline-block !important;
@@ -109,6 +109,8 @@ st.markdown("""
         border: none !important;
         min-height: 0px !important;
         height: auto !important;
+        display: flex !important;
+        align-items: center !important;
     }
 
     /* Style du bouton d'upload */
@@ -126,9 +128,10 @@ st.markdown("""
         background-color: #334155 !important;
     }
 
-    /* Masquer uniquement le texte des instructions et la taille (200MB) sans toucher au bouton */
+    /* Masquer le texte "200MB per file..." et les instructions sous/à côté du bouton */
     [data-testid="stFileUploaderInstructions"],
-    div[data-testid="stFileUploader"] small {
+    div[data-testid="stFileUploader"] small,
+    div[data-testid="stFileUploader"] section > div:not(:has(button)) {
         display: none !important;
     }
 </style>
