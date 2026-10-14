@@ -196,20 +196,179 @@ def render_vestiaire_tab(data, manager):
     # ==========================================
     # SECTION EFFECTIF / JOUEURS
     # ==========================================
-    # ==========================================
-    # SECTION EFFECTIF / JOUEURS
-    # ==========================================
-    # ==========================================
-    # SECTION EFFECTIF / JOUEURS
-    # ==========================================
     with st.expander("⚽ Effectif Complet", expanded=False):
         col_p_btn1, col_p_btn2 = st.columns([2, 2])
         with col_p_btn1:
             if st.button("➕ Ajouter un joueur", type="primary", key="add_player_modal_btn"):
                 st.session_state.editing_player_idx = "new"
+                st.session_state.show_csv_uploader = False
+                st.session_state.csv_rows_to_import = None
+                st.rerun()
+        with col_p_btn2:
+            if st.button("📥 Importer depuis un CSV", type="secondary", key="open_csv_uploader_btn"):
+                st.session_state.show_csv_uploader = not st.session_state.get("show_csv_uploader", False)
+                st.session_state.editing_player_idx = None
                 st.rerun()
 
         joueurs = v_data.setdefault("tous_les_joueurs", [])
+
+        # --- GESTION DE L'UPLOAD DU FICHIER CSV ---
+        if st.session_state.get("show_csv_uploader", False):
+            with st.container(border=True):
+                st.markdown("#### 📥 Importer des joueurs par fichier CSV")
+                uploaded_csv = st.file_uploader("Sélectionner le fichier CSV FFF", type=["csv"], key="vestiaire_csv_file_input")
+
+                if uploaded_csv is not None:
+                    try:
+                        import csv
+                        import io
+                        
+                        bytes_data = uploaded_csv.getvalue()
+                        sample = bytes_data[:2048].decode("utf-8-sig", errors="ignore")
+                        delimiter = ";" if ";" in sample else ","
+                        
+                        f_text = io.TextIOWrapper(io.BytesIO(bytes_data), encoding="utf-8-sig")
+                        reader = csv.DictReader(f_text, delimiter=delimiter)
+                        rows = list(reader)
+
+                        if not rows:
+                            st.error("Le fichier CSV est vide.")
+                        else:
+                            st.session_state.csv_rows_to_import = rows
+                            st.session_state.show_csv_uploader = False
+                            st.success(f"{len(rows)} lignes lues avec succès ! Veuillez sélectionner les joueurs ci-dessous.")
+                            st.rerun()
+                    except Exception as err:
+                        st.error(f"Erreur lors de la lecture du fichier CSV : {err}")
+
+        # --- INTERFACE DE SÉLECTION DES JOUEURS DU CSV ---
+        if st.session_state.get("csv_rows_to_import"):
+            rows = st.session_state.csv_rows_to_import
+
+            def nettoyer_cat(cat_str):
+                return str(cat_str).split("(")[0].strip()
+
+            categories = sorted({
+                nettoyer_cat(row.get("Sous catégorie_1", ""))
+                for row in rows
+                if row.get("Sous catégorie_1", "").strip()
+            })
+
+            with st.container(border=True):
+                st.markdown("### 📋 Sélection des joueurs à importer")
+                
+                selected_cat_import = st.selectbox("1. Choisir une catégorie :", categories, key="csv_select_cat")
+
+                filtered_indices = [
+                    idx for idx, r in enumerate(rows)
+                    if nettoyer_cat(r.get("Sous catégorie_1", "")) == selected_cat_import
+                ]
+
+                st.markdown(f"**2. Joueurs de la catégorie ({selected_cat_import}) :**")
+
+                if "csv_selected_indices" not in st.session_state:
+                    st.session_state.csv_selected_indices = set()
+
+                col_chk1, col_chk2 = st.columns(2)
+                with col_chk1:
+                    if st.button("Tout cocher pour cette catégorie", key="csv_check_all"):
+                        for idx in filtered_indices:
+                            st.session_state.csv_selected_indices.add(idx)
+                        st.rerun()
+                with col_chk2:
+                    if st.button("Tout décocher", key="csv_uncheck_all"):
+                        for idx in filtered_indices:
+                            st.session_state.csv_selected_indices.discard(idx)
+                        st.rerun()
+
+                for idx in filtered_indices:
+                    row = rows[idx]
+                    nom = row.get("Nom", "").strip().upper()
+                    prenom = row.get("Prénom", "").strip().capitalize()
+                    disp_name = f"{nom} {prenom}" if (nom or prenom) else f"Joueur #{idx+1}"
+                    
+                    is_checked = idx in st.session_state.csv_selected_indices
+                    checked = st.checkbox(disp_name, value=is_checked, key=f"csv_player_chk_{idx}")
+                    
+                    if checked:
+                        st.session_state.csv_selected_indices.add(idx)
+                    else:
+                        st.session_state.csv_selected_indices.discard(idx)
+
+                st.markdown("---")
+                total_selected = len(st.session_state.csv_selected_indices)
+                st.info(f"📊 **{total_selected}** joueur(s) sélectionné(s) au total pour l'importation.")
+
+                col_imp_val, col_imp_can = st.columns(2)
+                with col_imp_val:
+                    if st.button("✅ Valider l'importation des sélectionnés", type="primary", use_container_width=True):
+                        if total_selected == 0:
+                            st.warning("Veuillez cocher au moins un joueur.")
+                        else:
+                            effectif = v_data.setdefault("tous_les_joueurs", [])
+                            nb_importes = 0
+                            nb_mis_a_jour = 0
+
+                            for idx in st.session_state.csv_selected_indices:
+                                row = rows[idx]
+                                nom = row.get("Nom", "").strip().upper()
+                                prenom = row.get("Prénom", "").strip().capitalize()
+                                licence = row.get("Numéro personne_1", "").strip()
+                                tel = row.get("Mobile personnel_1", "").strip()
+                                
+                                tel_clean = "".join(filter(str.isdigit, tel))
+                                if tel_clean:
+                                    if len(tel_clean) == 9 and not tel_clean.startswith("0"):
+                                        tel = "0" + tel_clean
+                                    elif len(tel_clean) == 10 and not tel_clean.startswith("0"):
+                                        tel = "0" + tel_clean[1:]
+                                    else:
+                                        tel = tel_clean
+
+                                voie = row.get("Voie-rue_1", "").strip()
+                                cp = row.get("Code postal_1", "").strip()
+                                ville = row.get("Bureau distributeur_2", "").strip()
+                                adresse_complete = " ".join(filter(None, [voie, cp, ville]))
+
+                                donnees_csv = {
+                                    "nom": nom,
+                                    "prenom": prenom,
+                                    "categorie": nettoyer_cat(row.get("Sous catégorie_1", "")),
+                                    "date_naissance": row.get("Né(e) le_2", "").strip(),
+                                    "licence": licence,
+                                    "telephone": tel,
+                                    "email": row.get("Email principal_1", "").strip(),
+                                    "adresse": adresse_complete,
+                                }
+
+                                joueur_existant = None
+                                for j in effectif:
+                                    lic_ex = str(j.get("licence", "")).strip()
+                                    nom_ex = str(j.get("nom", "")).strip().upper()
+                                    pren_ex = str(j.get("prenom", "")).strip().capitalize()
+                                    if (licence and lic_ex == licence) or (nom_ex == nom and pren_ex == prenom):
+                                        joueur_existant = j
+                                        break
+
+                                if joueur_existant:
+                                    joueur_existant.update({k: v for k, v in donnees_csv.items() if v})
+                                    nb_mis_a_jour += 1
+                                else:
+                                    donnees_csv["poste"] = ""
+                                    donnees_csv["photo_url"] = ""
+                                    effectif.append(donnees_csv)
+                                    nb_importes += 1
+
+                            st.session_state.csv_rows_to_import = None
+                            st.session_state.csv_selected_indices = set()
+                            st.success(f"Importation réussie : {nb_importes} ajouté(s), {nb_mis_a_jour} mis à jour !")
+                            st.rerun()
+
+                with col_imp_can:
+                    if st.button("Annuler l'import", use_container_width=True):
+                        st.session_state.csv_rows_to_import = None
+                        st.session_state.csv_selected_indices = set()
+                        st.rerun()
 
         # Formulaire si ajout d'un NOUVEAU joueur (affiché en haut de liste)
         if st.session_state.editing_player_idx == "new":
@@ -275,6 +434,8 @@ def render_vestiaire_tab(data, manager):
                 with col_j_edit:
                     if st.button("✏️", key=f"edit_p_{j_idx}", help="Modifier"):
                         st.session_state.editing_player_idx = j_idx
+                        st.session_state.show_csv_uploader = False
+                        st.session_state.csv_rows_to_import = None
                         st.rerun()
                 with col_j_del:
                     if st.button("🗑️", key=f"del_p_{j_idx}", help="Supprimer"):
@@ -362,7 +523,6 @@ def render_vestiaire_tab(data, manager):
                 
                 for j in joueurs:
                     j_full_name = f"{j.get('nom', '').upper()} {j.get('prenom', '')}".strip()
-                    # Vérifier si ce joueur était déjà dans le groupe
                     is_checked = any(j.get('nom', '').lower() in m.lower() and j.get('prenom', '').lower() in m.lower() for m in membres_in_groupe)
                     
                     if st.checkbox(j_full_name, value=is_checked, key=f"chk_grp_{g_nom}_{j_full_name}"):
