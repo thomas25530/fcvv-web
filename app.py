@@ -20,12 +20,20 @@ try:
 except Exception:
     logo_favicon = "⚽"  # Fallback par défaut si le logo n'est pas trouvé
 
-# 1. CONFIGURATION DE LA PAGE (Nom et Icône pour PWA / Navigateur)
+# 1. CONFIGURATION DE LA PAGE
 st.set_page_config(
     page_title="FCVV Admin", 
-    page_icon=logo_favicon, 
+    page_icon="assets/logo.png", 
     layout="wide"
 )
+
+# INJECTION DES MÉTADONNÉES PWA (Pour forcer Android/Chrome à prendre le nom et le logo)
+st.markdown("""
+    <link rel="manifest" href="app/static/manifest.json"> <!-- ou simplement href="manifest.json" selon votre hébergement -->
+    <meta name="apple-mobile-web-app-title" content="FCVV Admin">
+    <meta name="application-name" content="FCVV Admin">
+    <meta name="theme-color" content="#0b1329">
+""", unsafe_allow_html=True)
 
 st.markdown("""
 <style>
