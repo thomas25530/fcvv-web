@@ -100,10 +100,17 @@ st.markdown("""
     }
 
     /* 6. CORRECTION DU CADRE BLANC DES FILE UPLOADERS */
+    /* Forcer le file uploader à se comporter comme un petit élément compact */
+    div[data-testid="stFileUploader"] {
+        width: fit-content !important;
+        display: inline-block !important;
+    }
+    
     div[data-testid="stFileUploader"] section {
         padding: 0 !important;
         background-color: transparent !important;
         border: none !important;
+        width: auto !important;
     }
     div[data-testid="stFileUploader"] section button {
         background-color: #1e293b !important;
