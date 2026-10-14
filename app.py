@@ -414,5 +414,3 @@ if is_super_admin:
                 st.success("Modifications enregistrées et synchronisées avec succès !")
             except Exception as err:
                 st.error(f"Erreur lors de la sauvegarde : {err}")
-
-
