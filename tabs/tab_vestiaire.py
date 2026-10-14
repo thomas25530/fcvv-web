@@ -314,8 +314,13 @@ def render_effectif(v_data, manager):
                                     st.session_state.editing_player_idx = None
 
                         with col_f_cancel:
-                            if st.button("Annuler", use_container_width=True, key=f"btn_cancel_p_{j_idx}"):
+                            if st.button(
+                                "Annuler",
+                                use_container_width=True,
+                                key="btn_cancel_p_new"
+                            ):
                                 st.session_state.editing_player_idx = None
+                                st.rerun()
 
         else:
             st.info("Aucun joueur enregistré dans cet effectif.")
