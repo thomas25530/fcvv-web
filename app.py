@@ -29,7 +29,7 @@ st.set_page_config(
 
 # INJECTION DES MÉTADONNÉES PWA (Pour forcer Android/Chrome à prendre le nom et le logo)
 st.markdown("""
-    <link rel="manifest" href="app/static/manifest.json"> <!-- ou simplement href="manifest.json" selon votre hébergement -->
+    <link rel="manifest" href="manifest.json"> <!-- ou simplement href="manifest.json" selon votre hébergement -->
     <meta name="apple-mobile-web-app-title" content="FCVV Admin">
     <meta name="application-name" content="FCVV Admin">
     <meta name="theme-color" content="#0b1329">
