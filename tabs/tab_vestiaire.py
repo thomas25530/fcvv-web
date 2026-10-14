@@ -196,7 +196,7 @@ def render_vestiaire_tab(data, manager):
     # ==========================================
     # SECTION EFFECTIF / JOUEURS
     # ==========================================
-    with st.expander("⚽ Effectif Complet", expanded=False):
+    with st.expander("⚽ Effectif Complet", expanded=True):
         col_p_btn1, col_p_btn2 = st.columns([2, 2])
         with col_p_btn1:
             if st.button("➕ Ajouter un joueur", type="primary", key="add_player_modal_btn"):
