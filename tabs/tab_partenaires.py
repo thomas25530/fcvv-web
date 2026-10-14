@@ -56,13 +56,13 @@ def render_partenaires_tab(data, config_manager):
 
     partners_to_remove = []
 
-    # 4. Affichage par niveau (équivalent des LabelFrame)
+    # 4. Affichage par niveau (encapsulé dans des expanders repliés par défaut)
     for lvl in sorted_levels:
         group_items = groups[lvl]
         first_p = group_items[0][1]
 
-        with st.container(border=True):
-            st.markdown(f"### 🏷️ Niveau : `{lvl.upper()}`")
+        # Utilisation d'un expander replié par défaut (expanded=False)
+        with st.expander(f"🏷️ Niveau : {lvl.upper()} ({len(group_items)} partenaires)", expanded=False):
             
             # Paramètres de niveau partagés (modifiables)
             col_lvl, col_ord, col_add = st.columns([3, 2, 3])
