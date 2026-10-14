@@ -225,7 +225,8 @@ def render_vestiaire_tab(data, manager):
         if st.session_state.editing_player_idx is not None:
             st.markdown("---")
             is_new = st.session_state.editing_player_idx == "new"
-            st.markdown(f"#### {'➕ Ajouter un joueur' : '✏️ Modifier le joueur' if not is_new else '➕'}")
+            titre_form = "➕ Ajouter un nouveau joueur" if is_new else "✏️ Modifier le joueur"
+            st.markdown(f"#### {titre_form}")
 
             current_p = {} if is_new else joueurs[st.session_state.editing_player_idx]
 
@@ -285,6 +286,11 @@ def render_vestiaire_tab(data, manager):
                         st.session_state.editing_player_idx = None
                         st.success("Joueur enregistré avec succès !")
                         st.rerun()
+
+            with col_f_cancel:
+                if st.button("Annuler", use_container_width=True):
+                    st.session_state.editing_player_idx = None
+                    st.rerun()
 
             with col_f_cancel:
                 if st.button("Annuler", use_container_width=True):
