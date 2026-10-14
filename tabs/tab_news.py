@@ -90,7 +90,7 @@ def render_news_tab(data, config_manager):
     
     for idx, article in enumerate(st.session_state.news_list):
         title_display = article['title'] if article['title'] else 'Sans titre'
-        with st.expander(f"Article {idx + 1} : {title_display}", expanded=True):
+        with st.expander(f"Article {idx + 1} : {title_display}", expanded=False):
             
             col1, col2 = st.columns([3, 1])
             with col1:
