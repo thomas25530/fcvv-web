@@ -13,6 +13,7 @@ from tabs.tab_boutique import render_boutique_tab
 from tabs.tab_divers import render_divers_tab
 from tabs.tab_organigramme import render_organigramme_tab
 from tabs.tab_classements import render_classements_tab
+from tabs.tab_vestiaire import render_vestiaire_tab
 
 # ID de votre fichier YAML principal sur Google Drive
 FILE_ID = "161ngxPQz66QumHjG_us6qqyAtA0GPX2x"
@@ -370,20 +371,8 @@ if is_super_admin:
         render_partenaires_tab(data, manager)
     with tabs[7]:
         render_about_tab(data, manager)
-    with tabs[8]:
-        st.subheader("📂 Vestiaire & Médias (Google Drive)")
-        vestiaire_folder_id = manager.get_vestiaire_folder_id()
-        
-        uploaded_file = st.file_uploader("Choisir une image à envoyer dans le vestiaire", type=["jpg", "jpeg", "png", "webp"])
-        if uploaded_file is not None:
-            if st.button("Uploader ce fichier sur le Drive"):
-                try:
-                    with st.spinner("Téléversement vers Google Drive..."):
-                        file_id, file_url = manager.upload_uploaded_file_to_drive(uploaded_file, vestiaire_folder_id)
-                    st.success(f"Fichier uploadé avec succès ! ID : {file_id}")
-                    st.write(f"Lien public : {file_url}")
-                except Exception as up_err:
-                    st.error(f"Erreur lors de l'upload : {up_err}")
+    with tabs[8]: # ou selon votre index d'onglet
+        render_vestiaire_tab(data, manager)
     with tabs[9]:
         render_notification_tab(data, manager)
 
