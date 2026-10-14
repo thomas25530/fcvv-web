@@ -23,7 +23,7 @@ def render_organigramme_tab(data, manager):
         nom_groupe = groupe.get("groupe", f"Groupe #{g_idx + 1}")
         membres = groupe.get("membres", [])
 
-        with st.expander(f"📋 **{nom_groupe}** ({len(membres)} membres)", expanded=True):
+        with st.expander(f"📋 **{nom_groupe}** ({len(membres)} membres)", expanded=False):
 
             # --- BOUTON D'AJOUT DE MEMBRE ---
             col_g_title, col_g_add = st.columns([4, 1])
