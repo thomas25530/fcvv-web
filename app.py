@@ -267,30 +267,89 @@ if is_super_admin:
             except Exception as err:
                 st.error(f"Erreur lors de la sauvegarde : {err}")
 
-# --- STYLE CSS GLOBAL ---
+# --- STYLE CSS GLOBAL (DARK MODE / FCVV STYLE) ---
 st.markdown("""
 <style>
-    .stTextInput input, .stTextArea textarea {
-        background-color: #ffffff !important;
-        border: 2px solid #94a3b8 !important;
-        border-radius: 8px !important;
-        color: #0f172a !important;
-        font-weight: 500 !important;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
+    /* 1. FOND DE PAGE ET COULEUR DU TEXTE PRINCIPAL */
+    .stApp {
+        background-color: #0b1329 !important;
+        color: #f8fafc !important;
     }
-    .stTextInput input:hover, .stTextArea textarea:hover {
+    
+    /* Titres et textes généraux */
+    h1, h2, h3, h4, h5, h6, p, label, span {
+        color: #f8fafc !important;
+    }
+
+    /* 2. CHAMPS ÉDITABLES (Inputs & TextAreas) - Fond Sombre & Texte Clair */
+    .stTextInput input, .stTextArea textarea, div[data-baseweb="select"] > div {
+        background-color: #1e293b !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px !important;
+        color: #f1f5f9 !important;
+        font-weight: 500 !important;
+    }
+
+    /* Effet au survol (Hover) */
+    .stTextInput input:hover, .stTextArea textarea:hover, div[data-baseweb="select"]:hover {
         border-color: #64748b !important;
     }
+
+    /* Effet au clic (Focus) */
     .stTextInput input:focus, .stTextArea textarea:focus {
-        background-color: #ffffff !important;
-        border-color: #2563eb !important;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25) !important;
+        background-color: #1e293b !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4) !important;
+        color: #ffffff !important;
     }
-    div[data-testid="stVerticalBlock"] div[data-testid="stContainer"] {
-        border-radius: 10px;
-        background-color: #ffffff;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+
+    /* 3. CONTENEURS / CARTES / EXPANDERS (Fonds sombres contrastés) */
+    div[data-testid="stVerticalBlock"] div[data-testid="stContainer"], 
+    .stExpander {
+        background-color: #152238 !important;
+        border: 1px solid #1e293b !important;
+        border-radius: 10px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    /* 4. ONGLETS (Tabs) - Style sombre avec accent bleu/jaune */
+    button[data-baseweb="tab"] {
+        color: #94a3b8 !important;
+        font-weight: 600 !important;
+    }
+    
+    button[aria-selected="true"] {
+        color: #f7ec3f !important; /* Jaune FCVV pour l'onglet actif */
+        border-bottom-color: #f7ec3f !important;
+    }
+
+    /* 5. BOUTONS AMÉLIORÉS */
+    /* Bouton primaire (Sauvegarde, Actions principales) */
+    button[kind="primary"] {
+        background-color: #16a34a !important; /* Vert vibrant */
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 8px !important;
+        font-weight: bold !important;
+    }
+    button[kind="primary"]:hover {
+        background-color: #15803d !important;
+    }
+
+    /* Bouton secondaire (Déconnexion, annuler) */
+    button[kind="secondary"] {
+        background-color: #334155 !important;
+        color: #f8fafc !important;
+        border: 1px solid #475569 !important;
+        border-radius: 8px !important;
+    }
+    button[kind="secondary"]:hover {
+        background-color: #475569 !important;
+    }
+
+    /* 6. MESSAGES D'ALERTE / Bannières */
+    .stAlert {
+        border-radius: 8px !important;
     }
 </style>
 """, unsafe_allow_html=True)
