@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
 import hashlib
-from PIL import Image
 import streamlit as st
 from config_manager import ConfigManager
 
@@ -12,26 +11,13 @@ from tabs.tab_partenaires import render_partenaires_tab
 from tabs.tab_boutique import render_boutique_tab
 
 # ID de votre fichier YAML principal sur Google Drive
+
 FILE_ID = "161ngxPQz66QumHjG_us6qqyAtA0GPX2x"
 
-# Chargement sécurisé du logo pour l'icône de l'application / favicon
-try:
-    logo_favicon = Image.open("assets/logo.png")
-except Exception:
-    logo_favicon = "⚽"  # Fallback par défaut si le logo n'est pas trouvé
-
-# 1. CONFIGURATION DE LA PAGE (Nom et Icône pour PWA / Navigateur)
+# 1. CONFIGURATION DE LA PAGE
 st.set_page_config(
-    page_title="FCVV Admin", 
-    page_icon=logo_favicon, 
-    layout="wide"
+    page_title="FC VALDAHON VERCEL - Administration", page_icon="⚽", layout="wide"
 )
-# Initialisation sécurisée du ConfigManager avec mise en cache Streamlit
-@st.cache_resource
-def get_config_manager():
-    return ConfigManager(FILE_ID)
-
-manager = get_config_manager()
 
 st.markdown("""
 <style>
@@ -151,7 +137,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Initialisation sécurisée du ConfigManager avec mise en cache Streamlit
+@st.cache_resource
+def get_config_manager():
+    return ConfigManager(FILE_ID)
 
+manager = get_config_manager()
 
 # --- CHARGEMENT DES DONNÉES EN SESSION ---
 if "config_data" not in st.session_state:
