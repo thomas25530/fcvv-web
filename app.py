@@ -19,7 +19,6 @@ st.set_page_config(
     page_title="FC VALDAHON VERCEL - Administration", page_icon="⚽", layout="wide"
 )
 
-# 2. APPLICATION IMMÉDIATE DU STYLE CSS SOMBRE (Placé ICI pour être actif dès le Login)
 st.markdown("""
 <style>
     /* 1. FOND DE PAGE ET COULEUR DU TEXTE PRINCIPAL */
@@ -28,7 +27,6 @@ st.markdown("""
         color: #f8fafc !important;
     }
     
-    /* Titres et textes généraux */
     h1, h2, h3, h4, h5, h6, p, label, span {
         color: #f8fafc !important;
     }
@@ -99,13 +97,11 @@ st.markdown("""
         border-radius: 8px !important;
     }
 
-    /* 6. CORRECTION DU CADRE BLANC DES FILE UPLOADERS */
-    /* Forcer le file uploader à se comporter comme un petit élément compact */
+    /* 6. STYLE ET COMPACTAGE DES FILE UPLOADERS */
     div[data-testid="stFileUploader"] {
         width: fit-content !important;
         display: inline-block !important;
     }
-    
     div[data-testid="stFileUploader"] section {
         padding: 0 !important;
         background-color: transparent !important;
@@ -122,6 +118,7 @@ st.markdown("""
         border-color: #3b82f6 !important;
         background-color: #334155 !important;
     }
+    /* Masquer le texte explicatif et la limite de taille (200MB) */
     div[data-testid="stFileUploader"] section small,
     div[data-testid="stFileUploader"] section [data-testid="stMarkdownContainer"] {
         display: none !important;
