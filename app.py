@@ -11,6 +11,7 @@ from tabs.tab_about import render_about_tab
 from tabs.tab_partenaires import render_partenaires_tab
 from tabs.tab_boutique import render_boutique_tab
 from tabs.tab_divers import render_divers_tab
+from tabs.tab_organigramme import render_organigramme_tab
 
 # ID de votre fichier YAML principal sur Google Drive
 FILE_ID = "161ngxPQz66QumHjG_us6qqyAtA0GPX2x"
@@ -361,9 +362,7 @@ if is_super_admin:
         classements_data = data["appli"].get("classements", {})
         st.write(classements_data)
     with tabs[3]:
-        st.subheader("👥 Organigramme")
-        org_data = data["appli"].get("organigramme", {})
-        st.write(org_data)
+        render_organigramme_tab(data, manager)
     with tabs[4]:
         render_divers_tab(data, manager)
     with tabs[5]:
