@@ -98,6 +98,27 @@ st.markdown("""
     .stAlert {
         border-radius: 8px !important;
     }
+
+    /* 6. CORRECTION DU CADRE BLANC DES FILE UPLOADERS */
+    div[data-testid="stFileUploader"] section {
+        padding: 0 !important;
+        background-color: transparent !important;
+        border: none !important;
+    }
+    div[data-testid="stFileUploader"] section button {
+        background-color: #1e293b !important;
+        color: #f1f5f9 !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px !important;
+    }
+    div[data-testid="stFileUploader"] section button:hover {
+        border-color: #3b82f6 !important;
+        background-color: #334155 !important;
+    }
+    div[data-testid="stFileUploader"] section small,
+    div[data-testid="stFileUploader"] section [data-testid="stMarkdownContainer"] {
+        display: none !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
