@@ -246,7 +246,7 @@ with col_logout:
         st.session_state.auth_profile = None
         st.rerun()
 
-# Si Super Admin, on autorise la modification de la saison et la maintenance du token
+# Si Super Admin, on autorise la modification de la saison, l'installation mobile et la maintenance du token
 if is_super_admin:
     with st.expander("📅 Configuration de la Saison & Infos techniques", expanded=False):
         col1, col2, col3 = st.columns([2, 2, 4])
@@ -267,6 +267,26 @@ if is_super_admin:
 - **Contact** : tournoivercel@gmail.com
                 """
             )
+
+        st.divider()
+        
+        # --- BOUTON / SECTION INSTALLATION SMARTPHONE ---
+        st.markdown("📱 **Application Mobile**")
+        st.write("Installez l'application directement sur l'écran d'accueil de votre smartphone pour y accéder comme une application native :")
+        
+        with st.popover("📲 Guide d'installation sur Smartphone"):
+            st.markdown("### 📲 Comment installer l'application ?")
+            st.markdown("""
+**Sur Android (Google Chrome) :**
+1. Ouvrez cette page dans le navigateur **Chrome**.
+2. Appuyez sur les **trois petits points** en haut à droite.
+3. Sélectionnez **"Ajouter à l'écran d'accueil"** ou **"Installer l'application"**.
+
+**Sur iPhone / iPad (Safari) :**
+1. Ouvrez cette page dans le navigateur **Safari**.
+2. Appuyez sur le bouton **Partager** (l'icône carrée avec une flèche vers le haut en bas de l'écran).
+3. Faites défiler les options et choisissez **"Sur l'écran d'accueil"**.
+            """)
 
         st.divider()
         
