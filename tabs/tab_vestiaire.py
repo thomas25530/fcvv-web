@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import hashlib
 import streamlit as st
+import csv
+import io
 
 POSTES_FOOTBALL = [
     "",
@@ -20,13 +22,11 @@ POSTES_FOOTBALL = [
     "Dirigeant",
 ]
 
-
-
 @st.fragment
 def render_effectif(v_data, manager):
     """Affiche et gère l’effectif dans un fragment Streamlit isolé."""
     with st.expander("⚽ Effectif Complet", expanded=False):
-        col_p_btn1, col_p_btn2 = st.columns([2, 2])
+        col_p_btn1, col_p_btn2, col_p_btn3 = st.columns([2, 2, 2])
         with col_p_btn1:
             if st.button("➕ Ajouter un joueur", type="primary", key="add_player_modal_btn"):
                 st.session_state.editing_player_idx = "new"
@@ -34,9 +34,34 @@ def render_effectif(v_data, manager):
                 st.session_state.csv_rows_to_import = None
                 st.rerun()
         with col_p_btn2:
-            if st.button("📥 Importer depuis un CSV", type="secondary", key="open_csv_uploader_btn"):
+            if st.button("📥 Importer CSV", type="secondary", key="open_csv_uploader_btn"):
                 st.session_state.show_csv_uploader = not st.session_state.get("show_csv_uploader", False)
                 st.session_state.editing_player_idx = None
+        with col_p_btn3:
+            # --- BOUTON EXPORTER CSV ---
+            joueurs_export = v_data.get("tous_les_joueurs", [])
+            if joueurs_export:
+                fieldnames = [
+                    "nom", "prenom", "categorie", "poste", 
+                    "date_naissance", "licence", "telephone", 
+                    "email", "adresse", "photo_url"
+                ]
+                output = io.StringIO()
+                writer = csv.DictWriter(output, fieldnames=fieldnames, delimiter=";")
+                writer.writeheader()
+                for j in joueurs_export:
+                    writer.writerow({field: j.get(field, "") for field in fieldnames})
+                csv_data = output.getvalue().encode("utf-8-sig")
+
+                st.download_button(
+                    label="📤 Exporter CSV",
+                    data=csv_data,
+                    file_name="effectif_joueurs.csv",
+                    mime="text/csv",
+                    key="download_csv_effectif_btn"
+                )
+            else:
+                st.button("📤 Exporter CSV", disabled=True, key="download_csv_effectif_disabled")
 
         joueurs = v_data.setdefault("tous_les_joueurs", [])
 
@@ -44,13 +69,10 @@ def render_effectif(v_data, manager):
         if st.session_state.get("show_csv_uploader", False):
             with st.container(border=True):
                 st.markdown("#### 📥 Importer des joueurs par fichier CSV")
-                uploaded_csv = st.file_uploader("Sélectionner le fichier CSV FFF", type=["csv"], key="vestiaire_csv_file_input")
+                uploaded_csv = st.file_uploader("Sélectionner le fichier CSV", type=["csv"], key="vestiaire_csv_file_input")
 
                 if uploaded_csv is not None:
                     try:
-                        import csv
-                        import io
-
                         bytes_data = uploaded_csv.getvalue()
                         sample = bytes_data[:2048].decode("utf-8-sig", errors="ignore")
                         delimiter = ";" if ";" in sample else ","
@@ -68,17 +90,26 @@ def render_effectif(v_data, manager):
                     except Exception as err:
                         st.error(f"Erreur lors de la lecture du fichier CSV : {err}")
 
-        # --- INTERFACE DE SÉLECTION DES JOUEURS DU CSV ---
+        # --- INTERFACE DE SÉLECTION DES JOUEURS DU CSV (COMPATIBLE DEUX FORMATS) ---
         if st.session_state.get("csv_rows_to_import"):
             rows = st.session_state.csv_rows_to_import
+
+            # Fonction utilitaire pour chercher la valeur dans plusieurs colonnes possibles (Export vs Externe)
+            def get_col(row, keys):
+                for k in keys:
+                    if k in row and row[k]:
+                        val = str(row[k]).strip()
+                        if val:
+                            return val
+                return ""
 
             def nettoyer_cat(cat_str):
                 return str(cat_str).split("(")[0].strip()
 
             categories = sorted({
-                nettoyer_cat(row.get("Sous catégorie_1", ""))
+                nettoyer_cat(get_col(row, ["categorie", "Sous catégorie_1"]))
                 for row in rows
-                if row.get("Sous catégorie_1", "").strip()
+                if get_col(row, ["categorie", "Sous catégorie_1"])
             })
 
             with st.container(border=True):
@@ -88,7 +119,7 @@ def render_effectif(v_data, manager):
 
                 filtered_indices = [
                     idx for idx, r in enumerate(rows)
-                    if nettoyer_cat(r.get("Sous catégorie_1", "")) == selected_cat_import
+                    if nettoyer_cat(get_col(r, ["categorie", "Sous catégorie_1"])) == selected_cat_import
                 ]
 
                 st.markdown(f"**2. Joueurs de la catégorie ({selected_cat_import}) :**")
@@ -108,8 +139,8 @@ def render_effectif(v_data, manager):
 
                 for idx in filtered_indices:
                     row = rows[idx]
-                    nom = row.get("Nom", "").strip().upper()
-                    prenom = row.get("Prénom", "").strip().capitalize()
+                    nom = get_col(row, ["nom", "Nom"]).upper()
+                    prenom = get_col(row, ["prenom", "Prénom"]).capitalize()
                     disp_name = f"{nom} {prenom}" if (nom or prenom) else f"Joueur #{idx+1}"
 
                     is_checked = idx in st.session_state.csv_selected_indices
@@ -136,11 +167,16 @@ def render_effectif(v_data, manager):
 
                             for idx in st.session_state.csv_selected_indices:
                                 row = rows[idx]
-                                nom = row.get("Nom", "").strip().upper()
-                                prenom = row.get("Prénom", "").strip().capitalize()
-                                licence = row.get("Numéro personne_1", "").strip()
-                                tel = row.get("Mobile personnel_1", "").strip()
+                                nom = get_col(row, ["nom", "Nom"]).upper()
+                                prenom = get_col(row, ["prenom", "Prénom"]).capitalize()
+                                licence = get_col(row, ["licence", "Numéro personne_1"])
+                                email = get_col(row, ["email", "Email principal_1"])
+                                poste = get_col(row, ["poste"])
+                                photo_url = get_col(row, ["photo_url"])
+                                date_naiss = get_col(row, ["date_naissance", "Né(e) le_2"])
 
+                                # Téléphone (gère "telephone" ou "Mobile personnel_1")
+                                tel = get_col(row, ["telephone", "Mobile personnel_1"])
                                 tel_clean = "".join(filter(str.isdigit, tel))
                                 if tel_clean:
                                     if len(tel_clean) == 9 and not tel_clean.startswith("0"):
@@ -150,20 +186,25 @@ def render_effectif(v_data, manager):
                                     else:
                                         tel = tel_clean
 
-                                voie = row.get("Voie-rue_1", "").strip()
-                                cp = row.get("Code postal_1", "").strip()
-                                ville = row.get("Bureau distributeur_2", "").strip()
-                                adresse_complete = " ".join(filter(None, [voie, cp, ville]))
+                                # Adresse (gère "adresse" ou la reconstitution FFF)
+                                adresse_complete = get_col(row, ["adresse"])
+                                if not adresse_complete:
+                                    voie = row.get("Voie-rue_1", "").strip()
+                                    cp = row.get("Code postal_1", "").strip()
+                                    ville = row.get("Bureau distributeur_2", "").strip()
+                                    adresse_complete = " ".join(filter(None, [voie, cp, ville]))
 
                                 donnees_csv = {
                                     "nom": nom,
                                     "prenom": prenom,
-                                    "categorie": nettoyer_cat(row.get("Sous catégorie_1", "")),
-                                    "date_naissance": row.get("Né(e) le_2", "").strip(),
+                                    "categorie": nettoyer_cat(get_col(row, ["categorie", "Sous catégorie_1"])),
+                                    "date_naissance": date_naiss,
                                     "licence": licence,
                                     "telephone": tel,
-                                    "email": row.get("Email principal_1", "").strip(),
+                                    "email": email,
                                     "adresse": adresse_complete,
+                                    "poste": poste,
+                                    "photo_url": photo_url,
                                 }
 
                                 joueur_existant = None
@@ -179,19 +220,19 @@ def render_effectif(v_data, manager):
                                     joueur_existant.update({k: v for k, v in donnees_csv.items() if v})
                                     nb_mis_a_jour += 1
                                 else:
-                                    donnees_csv["poste"] = ""
-                                    donnees_csv["photo_url"] = ""
                                     effectif.append(donnees_csv)
                                     nb_importes += 1
 
                             st.session_state.csv_rows_to_import = None
                             st.session_state.csv_selected_indices = set()
                             st.success(f"Importation réussie : {nb_importes} ajouté(s), {nb_mis_a_jour} mis à jour !")
+                            st.rerun()
 
                 with col_imp_can:
                     if st.button("Annuler l'import", use_container_width=True):
                         st.session_state.csv_rows_to_import = None
                         st.session_state.csv_selected_indices = set()
+                        st.rerun()
 
         # Formulaire si ajout d'un NOUVEAU joueur (affiché en haut de liste)
         if st.session_state.editing_player_idx == "new":
@@ -263,6 +304,7 @@ def render_effectif(v_data, manager):
                 with col_j_del:
                     if st.button("🗑️", key=f"del_p_{j_idx}", help="Supprimer"):
                         joueurs.pop(j_idx)
+                        st.rerun()
 
                 # Le formulaire d'édition s'affiche DÉROULÉ SOUS LE JOUEUR CONCERNÉ
                 if st.session_state.editing_player_idx == j_idx:
@@ -319,16 +361,12 @@ def render_effectif(v_data, manager):
                                     st.rerun()
 
                         with col_f_cancel:
-                            if st.button(
-                                "Annuler",
-                                use_container_width=True,
-                                key="btn_cancel_p_new"
-                            ):
+                            if st.button("Annuler", use_container_width=True, key=f"btn_cancel_edit_{j_idx}"):
                                 st.session_state.editing_player_idx = None
                                 st.rerun()
-
         else:
             st.info("Aucun joueur enregistré dans cet effectif.")
+
 
 def render_vestiaire_tab(data, manager):
     """Rendu de l'onglet Vestiaire & Médias adapté à Streamlit."""
