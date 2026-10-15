@@ -26,15 +26,16 @@ POSTES_FOOTBALL = [
 def render_effectif(v_data, manager):
     """Affiche et gère l’effectif dans un fragment Streamlit isolé."""
     with st.expander("⚽ Effectif Complet", expanded=False):
-        col_p_btn1, col_p_btn2, col_p_btn3 = st.columns([2, 2, 2])
+        # Utilisation de colonnes bien réparties pour que tous les boutons soient visibles
+        col_p_btn1, col_p_btn2, col_p_btn3 = st.columns(3)
         with col_p_btn1:
-            if st.button("➕ Ajouter un joueur", type="primary", key="add_player_modal_btn"):
+            if st.button("➕ Ajouter", type="primary", key="add_player_modal_btn", use_container_width=True):
                 st.session_state.editing_player_idx = "new"
                 st.session_state.show_csv_uploader = False
                 st.session_state.csv_rows_to_import = None
                 st.rerun()
         with col_p_btn2:
-            if st.button("📥 Importer CSV", type="secondary", key="open_csv_uploader_btn"):
+            if st.button("📥 Importer", type="secondary", key="open_csv_uploader_btn", use_container_width=True):
                 st.session_state.show_csv_uploader = not st.session_state.get("show_csv_uploader", False)
                 st.session_state.editing_player_idx = None
         with col_p_btn3:
@@ -54,14 +55,15 @@ def render_effectif(v_data, manager):
                 csv_data = output.getvalue().encode("utf-8-sig")
 
                 st.download_button(
-                    label="📤 Exporter CSV",
+                    label="📤 Exporter",
                     data=csv_data,
                     file_name="effectif_joueurs.csv",
                     mime="text/csv",
-                    key="download_csv_effectif_btn"
+                    key="download_csv_effectif_btn",
+                    use_container_width=True
                 )
             else:
-                st.button("📤 Exporter CSV", disabled=True, key="download_csv_effectif_disabled")
+                st.button("📤 Exporter", disabled=True, key="download_csv_effectif_disabled", use_container_width=True)
 
         joueurs = v_data.setdefault("tous_les_joueurs", [])
 
