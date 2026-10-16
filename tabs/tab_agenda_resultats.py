@@ -105,10 +105,19 @@ def render_agenda_resultats_tab(data, manager):
                             with c_l3:
                                 m["heure"] = st.text_input("Heure", value=m.get("heure", ""), key=f"ag_heure_{c_idx}_{sub_idx}_{m_idx}")
 
-                            if st.button("❌ Supprimer ce match", key=f"del_ag_m_{c_idx}_{sub_idx}_{m_idx}"):
-                                sub_matchs.pop(m_idx)
+                            if st.button(
+                                "❌ Supprimer ce match",
+                                key=f"del_ag_m_{c_idx}_{sub_idx}_{m_idx}"
+                            ):
+                                st.write(
+                                    f"Suppression demandée : {m_idx} / {m['equipeA']}"
+                                )
+                            
+                                sub_matchs.remove(m)
+                            
                                 if not sub_matchs:
                                     matchs_list.pop(sub_idx)
+                            
                                 st.rerun()
 
         for idx in sorted(agenda_to_remove, reverse=True):
@@ -209,10 +218,15 @@ def render_agenda_resultats_tab(data, manager):
 
                             m["buteurs"] = st.text_input("Buteurs", value=m.get("buteurs", ""), key=f"res_but_{c_idx}_{sub_idx}_{m_idx}")
 
-                            if st.button("❌ Supprimer ce résultat", key=f"del_res_m_{c_idx}_{sub_idx}_{m_idx}"):
-                                sub_matchs.pop(m_idx)
+                            if st.button(
+                                "❌ Supprimer ce résultat",
+                                key=f"del_res_m_{c_idx}_{sub_idx}_{m_idx}"
+                            ):
+                                sub_matchs.remove(m)
+                            
                                 if not sub_matchs:
                                     matchs_list.pop(sub_idx)
+                            
                                 st.rerun()
 
         for idx in sorted(res_to_remove, reverse=True):
