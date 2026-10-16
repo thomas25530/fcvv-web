@@ -109,10 +109,6 @@ def render_agenda_resultats_tab(data, manager):
                                 "❌ Supprimer ce match",
                                 key=f"del_ag_m_{c_idx}_{sub_idx}_{m_idx}"
                             ):
-                                st.write(
-                                    f"Suppression demandée : {m_idx} / {m['equipeA']}"
-                                )
-                            
                                 sub_matchs.remove(m)
                             
                                 if not sub_matchs:
